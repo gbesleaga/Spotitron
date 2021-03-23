@@ -8,6 +8,25 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
+  <script type="x-shader" id="sem-vs">
+    varying vec2 vUV;
+    void main() {
+        vUV = uv;
+        vec4 p = vec4( position, 1. );
+
+        gl_Position = projectionMatrix * modelViewMatrix * p;
+    }
+    </script>
+    
+    <script type="x-shader" id="sem-fs">
+    uniform sampler2D tMatCap;
+    varying vec2 vUV;
+    
+    void main() {
+        vec3 base = texture2D( tMatCap, vUV ).rgb;
+        gl_FragColor = vec4( base, 1. );
+    }
+    </script>
   <app-root></app-root>
 </body>
 </html>
