@@ -19,6 +19,7 @@ export class AuthCallbackComponent implements OnInit {
 
     ngOnInit() {
       if (this.authService.isAuthenticated()) {
+        this.router.navigate(['view/main']);
         return;
       }
   
@@ -61,7 +62,7 @@ export class AuthCallbackComponent implements OnInit {
               console.log('Login failed.');
               this.router.navigate(['']);
             } else {
-              console.log(this.authService.getAccessToken());
+              this.router.navigate(['view/main']);
             }
           }, 
           err => {

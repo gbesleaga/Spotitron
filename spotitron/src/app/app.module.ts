@@ -8,6 +8,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { AuthGuardService, AuthService, SpotifyHttpClientService, SpotifyLibModule } from 'spotify-lib';
 import { HttpClientModule } from '@angular/common/http';
+import { MainViewComponent } from './views/main-view/main-view.component';
 
 const appRoutes: Routes = [
   {
@@ -19,6 +20,11 @@ const appRoutes: Routes = [
     component: AuthCallbackComponent 
   },
   { 
+    path: 'view/main', 
+    component: MainViewComponent, 
+    canActivate: [AuthGuardService]
+  },
+  { 
     path: '**', 
     redirectTo: ''
   }
@@ -28,7 +34,8 @@ const appRoutes: Routes = [
   declarations: [
     AppComponent,
     AuthRedirectComponent,
-    AuthCallbackComponent
+    AuthCallbackComponent,
+    MainViewComponent
   ],
   imports: [
     BrowserModule,

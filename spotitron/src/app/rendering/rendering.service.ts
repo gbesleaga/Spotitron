@@ -15,6 +15,8 @@ export class RenderingService {
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
 
+    // TODO add renderer to main view component
+
     public init() {
 
         this.camera.position.set(0, 600, 800);
