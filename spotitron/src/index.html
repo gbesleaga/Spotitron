@@ -9,30 +9,21 @@
 </head>
 <body>
   <script type="x-shader" id="sem-vs">
-    varying vec2 vN;
-    varying vec2 vUv;
+    varying vec2 vUV;
     void main() {
-        vUv = uv;
+        vUV = uv;
         vec4 p = vec4( position, 1. );
-    
-        vec3 e = normalize( vec3( modelViewMatrix * p ) );
-        vec3 n = normalize( normalMatrix * normal );
-    
-        vec3 r = reflect( e, n );
-        float m = 2. * length( vec3( r.xy, r.z + 1. ) );
-        vN = r.xy / m + .5;
-    
+
         gl_Position = projectionMatrix * modelViewMatrix * p;
     }
     </script>
     
     <script type="x-shader" id="sem-fs">
     uniform sampler2D tMatCap;
-    varying vec2 vUv;
-    varying vec2 vN;
+    varying vec2 vUV;
     
     void main() {
-        vec3 base = texture2D( tMatCap, vUv ).rgb;
+        vec3 base = texture2D( tMatCap, vUV ).rgb;
         gl_FragColor = vec4( base, 1. );
     }
     </script>

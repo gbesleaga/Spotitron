@@ -4,7 +4,6 @@ import * as THREE from 'three';
 
 import { Map3DGeometry } from './Map3DGeometry';
 
-//TODO remove useless data attribute from countries (need a script or something)
 import countryData from '../../assets/countries/data.json'
 
 @Injectable({providedIn: 'root'})
@@ -33,10 +32,8 @@ export class RenderingService {
         let radius =  0.995;
         let geometry = new THREE.SphereGeometry(radius, 30, 15);
         let material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-        let cMaterial = [new THREE.MeshBasicMaterial( { color: 0xff0000 } ), new THREE.MeshBasicMaterial( { color: 0x0000ff })];
 
         //this.textureLoader.setCrossOrigin('*');
-        //const usaTexture = this.textureLoader.load("https://jbouny.github.io/texturing-intro-slides/iframes/resources/original/uv-test.png");
 
         const vs = document.getElementById( "sem-vs" )?.textContent;
         const fs = document.getElementById( "sem-fs" )?.textContent;
@@ -52,9 +49,6 @@ export class RenderingService {
         });
     
         usaMaterial.uniforms.tMatCap.value.wrapS = usaMaterial.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
-    
-
-        //const usaMaterial = new THREE.MeshBasicMaterial( { map: usaTexture } );
 
         this.globe.add(new THREE.Mesh(geometry, material));
 
@@ -65,21 +59,12 @@ export class RenderingService {
         for (var name in countries) {
             //console.log(name);
             let cGeometry = new Map3DGeometry (countries[name], 0);
-            let cMesh;
-            
-            if (name === 'China') {
-                cMesh = new THREE.Mesh (cGeometry, usaMaterial);
-            } else {
-                cMesh = new THREE.Mesh (cGeometry, usaMaterial);
-            }
+            let cMesh = new THREE.Mesh (cGeometry, usaMaterial);
             
             cMesh.name = name;
             this.globe.add(cMesh);
 
             i++;
-
-            //data[name].mesh = cMesh;
-            //data[name].mesh.name = name;
         }
 
         this.renderer.domElement.addEventListener('click', (event) => this.selectCountry(event));
@@ -96,9 +81,8 @@ export class RenderingService {
 
     public resize() {
         if (this.renderer.domElement.parentElement) {
-            //TODO can we get this from window
-            let w = this.renderer.domElement.parentElement.clientWidth;
-            let h = this.renderer.domElement.parentElement.clientHeight;
+            let w = window.innerWidth;
+            let h = window.innerHeight;
 
             // notify the renderer of the size change
             this.renderer.setSize(w, h);

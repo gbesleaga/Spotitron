@@ -5,12 +5,16 @@ class Face3 {
     constructor(public a: number, public b: number, public c: number, public vertexNormals?: THREE.Vector3[]) {}
 }
 
+export interface CountryRenderData {
+    vertices: number[];   // [lat, lon, ...]
+    triangles: number[];  // [tri i-s, ...]
+    polygons: number[][][]; // [[poly indices, hole i-s, ...], ...]
+}
+
+//TODO refactor
 export class Map3DGeometry extends THREE.BufferGeometry {
-    //TODO define type for data
-    // data.vertices = [lat, lon, ...]
-    // data.polygons = [[poly indices, hole i-s, ...], ...]
-    // data.triangles = [tri i-s, ...]
-    constructor(data:any, innerRadius: any) {
+    //TODO do we need innerRadius?
+    constructor(data: CountryRenderData, innerRadius: number) {
         super();
 
         let vertices: THREE.Vector3 [] = [];
@@ -146,9 +150,6 @@ export class Map3DGeometry extends THREE.BufferGeometry {
 
         this.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verticeBuffer), 3));
         this.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvBuffer), 2));
-        
-        //TODO
-        //this.computeFaceNormals ();
         
         this.boundingSphere = new THREE.Sphere (new THREE.Vector3 (), 1);
     }
