@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
+import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
 import { CountryDataService } from '../shared/country-data.service';
+import { CountryChart } from '../shared/types';
 
 import { Map3DGeometry } from './Map3DGeometry';
 
@@ -19,9 +21,9 @@ export class RenderingService {
 
     // TODO add renderer to main view component
 
-    public init() {
+    public init(charts: Map<string, CountryChart>) {
 
-        this.camera.position.set(0, 600, 800);
+        this.camera.position.set(0, 600, 200);
         this.camera.lookAt(this.scene.position);
         this.scene.add(this.camera);
 
@@ -44,7 +46,7 @@ export class RenderingService {
 
         //console.log(vs);
 
-        const usaMaterial = new THREE.ShaderMaterial({
+        const defaultCountryMaterial = new THREE.ShaderMaterial({
             uniforms: { 
                 tMatCap: { value: this.textureLoader.load("https://jbouny.github.io/texturing-intro-slides/iframes/resources/original/uv-test.png") }
             },
@@ -52,7 +54,7 @@ export class RenderingService {
             fragmentShader: fs?fs:""
         });
     
-        usaMaterial.uniforms.tMatCap.value.wrapS = usaMaterial.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
+        defaultCountryMaterial.uniforms.tMatCap.value.wrapS = defaultCountryMaterial.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
 
         this.globe.add(new THREE.Mesh(geometry, material));
 
@@ -60,10 +62,52 @@ export class RenderingService {
 
         let i = 0;
 
+        // key is url for number 1 song cover
+        const countryMaterials = new Map<string, THREE.ShaderMaterial>();
+
         for (var name in countries) {
             //console.log(name);
             let cGeometry = new Map3DGeometry (countries[name], 0);
-            let cMesh = new THREE.Mesh (cGeometry, usaMaterial);
+
+            let material: THREE.ShaderMaterial | undefined = defaultCountryMaterial;
+            let url = '';
+
+            // country has chart?
+            const countryChart = charts.get(name);
+            if (countryChart) {
+                const playlistItems = countryChart.tracks.items as SpotifyPlaylistTrackObject[];
+
+                if (playlistItems.length > 0) {
+                    const nImages = playlistItems[0].track.album.images.length;
+                    if (nImages) {
+                        //TODO which size do we want; we are picking largest here
+                        url = playlistItems[0].track.album.images[0].url;
+                    }
+                }
+            }
+
+            // we got an image?
+            if (url) {
+                material = countryMaterials.get(url);
+
+                if (!material) {
+                    // no material yet, so create it
+
+                    material = new THREE.ShaderMaterial({
+                        uniforms: { 
+                            tMatCap: { value: this.textureLoader.load(url) }
+                        },
+                        vertexShader: vs?vs:"",
+                        fragmentShader: fs?fs:""
+                    });
+                
+                    material.uniforms.tMatCap.value.wrapS = material.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
+
+                    countryMaterials.set(url, material);
+                }
+            }
+
+            let cMesh = new THREE.Mesh (cGeometry, material);
             
             cMesh.name = name;
             this.globe.add(cMesh);

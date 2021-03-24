@@ -6,6 +6,8 @@ import { AnimationService } from 'src/app/rendering/animation.service';
 import { RenderingService } from 'src/app/rendering/rendering.service';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { catchError, map } from 'rxjs/operators'
+import { CountryChart } from 'src/app/shared/types';
+
 
 @Component({
   selector: 'app-main-view',
@@ -14,7 +16,7 @@ import { catchError, map } from 'rxjs/operators'
 })
 export class MainViewComponent implements AfterViewInit {
 
-  private charts: any[] = [];
+  private charts: Map<string, CountryChart> = new Map();
 
   constructor(
     private countryDataService: CountryDataService,
@@ -24,7 +26,7 @@ export class MainViewComponent implements AfterViewInit {
     private spotifyService: SpotifyHttpClientService ) { }
 
   ngAfterViewInit(){
-    this.fetchNextCountry(0, this.countryDataService.countryNames.length);
+    this.fetchNextCountry(0, this.countryDataService.countryNames.length); //TODO fetch all
   }
 
   private fetchNextCountry(at: number, stop: number) {
@@ -51,7 +53,7 @@ export class MainViewComponent implements AfterViewInit {
           const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
 
           if (playlistItems) {
-            this.charts.push(chart);
+            this.charts.set(chart.country, chart);
           }
         }
       }
@@ -64,11 +66,13 @@ export class MainViewComponent implements AfterViewInit {
 
   private readyToRender() {
     for (let chart of this.charts) {
-      const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
-      console.log(chart.country + " : " + playlistItems[0].track.name);
+      //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
+      //console.log(chart.country + " : " + playlistItems[0].track.name);
+      
+      //console.log(chart);
     }
 
-    this.renderingService.init();
+    this.renderingService.init(this.charts);
     this.animationService.animate();
   }
 }
