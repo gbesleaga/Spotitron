@@ -1,13 +1,15 @@
 import { Injectable } from '@angular/core';
 
 import * as THREE from 'three';
+import { CountryDataService } from '../shared/country-data.service';
 
 import { Map3DGeometry } from './Map3DGeometry';
 
-import countryData from '../../assets/countries/data.json'
-
 @Injectable({providedIn: 'root'})
 export class RenderingService {
+
+    constructor(private countryDataService: CountryDataService) {
+    }
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -54,7 +56,7 @@ export class RenderingService {
 
         this.globe.add(new THREE.Mesh(geometry, material));
 
-        let countries: any = countryData;
+        let countries: any = this.countryDataService.data;
 
         let i = 0;
 
