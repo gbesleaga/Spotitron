@@ -17,14 +17,18 @@ export class MainViewComponent implements AfterViewInit {
     private spotifyService: SpotifyHttpClientService ) { }
 
   ngAfterViewInit(){
-    this.spotifyService.getCountryChart({accessToken: this.authService.getAccessToken(), countryName: 'Costa Rica' }).subscribe( chart => {
-      const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
+    this.spotifyService.getCountryChart({accessToken: this.authService.getAccessToken(), countryName: 'Jifu' }).subscribe( 
+      chart => {
+        const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
 
-      for (let item of playlistItems) {
-        console.log(item.track.name);
+        for (let item of playlistItems) {
+          console.log(item.track.album.images);
+        }
+      },
+      err => {
+        console.log("An error occured");
       }
-
-    });
+    );
     
     this.renderingService.init();
     this.animationService.animate();
