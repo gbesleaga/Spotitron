@@ -1,5 +1,6 @@
 import { AfterViewInit } from '@angular/core';
 import { Component } from '@angular/core';
+import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject } from 'spotify-lib';
 import { AnimationService } from 'src/app/rendering/animation.service';
 import { RenderingService } from 'src/app/rendering/rendering.service';
 
@@ -11,9 +12,24 @@ import { RenderingService } from 'src/app/rendering/rendering.service';
 export class MainViewComponent implements AfterViewInit {
 
   constructor(private renderingService: RenderingService,
-    private animationService: AnimationService ) { }
+    private animationService: AnimationService,
+    private authService: AuthService,
+    private spotifyService: SpotifyHttpClientService ) { }
 
   ngAfterViewInit(){
+    this.spotifyService.getCountryChart({accessToken: this.authService.getAccessToken(), countryName: 'Jifu' }).subscribe( 
+      chart => {
+        const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
+
+        for (let item of playlistItems) {
+          console.log(item.track.album.images);
+        }
+      },
+      err => {
+        console.log("An error occured");
+      }
+    );
+    
     this.renderingService.init();
     this.animationService.animate();
   }
