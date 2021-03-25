@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three-orbitcontrols-ts';
+
 import { CountryDataService } from '../shared/country-data.service';
 import { CountryChart } from '../shared/types';
 
@@ -15,6 +17,7 @@ export class RenderingService {
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
+    private controls: OrbitControls | undefined = undefined;
     private renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true });
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
@@ -32,6 +35,10 @@ export class RenderingService {
 
         document.body.appendChild( this.renderer.domElement );
     
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+        this.controls.enableZoom = true; // Set to false to disable zooming
+        this.controls.zoomSpeed = 1.0;
+
         this.globe.scale.set(250, 250, 250);
         this.scene.add(this.globe);
 
@@ -123,7 +130,7 @@ export class RenderingService {
     }
 
     public render() {
-        this.globe.rotation.y += 0.001;
+        //this.globe.rotation.y += 0.001;
         this.renderer.render( this.scene, this.camera );
     };
 
