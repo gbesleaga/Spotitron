@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 import { CountryDataService } from '../shared/country-data.service';
-import { CountryChart } from '../shared/types';
+import { CountryChart, Position2D } from '../shared/types';
 
 import { Map3DGeometry } from './Map3DGeometry';
 
@@ -18,11 +18,16 @@ export class RenderingService {
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private controls: OrbitControls | undefined = undefined;
+    // TODO add renderer to main view component
     private renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true });
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
 
-    // TODO add renderer to main view component
+    // user input
+    private mousePressed: boolean = false;
+    private mouseMoved: boolean = false;
+    private mousePosition: Position2D = {x: 0, y: 0};
+    private mouseDragDelta: number = 5;
 
     public init(charts: Map<string, CountryChart>) {
 
@@ -122,7 +127,9 @@ export class RenderingService {
             i++;
         }
 
-        this.renderer.domElement.addEventListener('click', (event) => this.selectCountry(event));
+        this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        this.renderer.domElement.addEventListener('mouseup', (e) =>   this.onMouseUp(e));
 
         window.addEventListener('resize', () => this.resize(), false);
 
@@ -144,6 +151,31 @@ export class RenderingService {
             // update the camera
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
+        }
+    }
+
+    private onMouseDown(e: MouseEvent) {
+        this.mousePressed = true;
+        this.mouseMoved = false;
+
+        this.mousePosition.x = e.pageX;
+        this.mousePosition.y = e.pageY;
+    }
+
+    private onMouseMove(e: MouseEvent) {
+        if (this.mousePressed) {
+            if (Math.abs(this.mousePosition.x - e.pageX) > this.mouseDragDelta ||
+                Math.abs(this.mousePosition.y - e.pageY) > this.mouseDragDelta) {
+                this.mouseMoved = true;
+            }
+        }
+    }
+
+    private onMouseUp(e: MouseEvent) {
+        this.mousePressed = false;
+
+        if (!this.mouseMoved) {
+            this.selectCountry(e);
         }
     }
 
