@@ -23,29 +23,40 @@ export class RenderingService {
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
 
+    // initial positions
+    // globe is at 0,0,0 and doesn't move
+    private cameraInitialPosition = new THREE.Vector3(0, 600, 200);
+
+    // camera dolly
+    private cameraDollySpeed = 10;
+    private cameraDollyOutMaxDist = 0;
+    private cameraDollyInMaxDist = 450; // manually tested, might need to be adjusted if initial position is changed
+
     // user input
     private mousePressed: boolean = false;
     private mouseMoved: boolean = false;
     private mousePosition: Position2D = {x: 0, y: 0};
     private mouseDragDelta: number = 5;
 
-    public init(charts: Map<string, CountryChart>) {
 
-        this.camera.position.set(0, 600, 200);
+    public init(charts: Map<string, CountryChart>) {
+        this.camera.position.copy(this.cameraInitialPosition);
         this.camera.lookAt(this.scene.position);
         this.scene.add(this.camera);
 
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
-        this.renderer.setClearColor(0xffffff);
+        this.renderer.setSize( window.innerWidth, window.innerHeight);
+        this.renderer.setClearColor(0xff0000);
 
         document.body.appendChild( this.renderer.domElement );
     
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-        this.controls.enableZoom = true; // Set to false to disable zooming
-        this.controls.zoomSpeed = 1.0;
+        this.controls.enableZoom = false;
+
+        this.cameraDollyOutMaxDist = this.camera.position.distanceTo(this.globe.position) * 1.5;
 
         this.globe.scale.set(250, 250, 250);
         this.scene.add(this.globe);
+
 
         let radius =  0.995;
         let geometry = new THREE.SphereGeometry(radius, 30, 15);
@@ -130,6 +141,7 @@ export class RenderingService {
         this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
         this.renderer.domElement.addEventListener('mouseup', (e) =>   this.onMouseUp(e));
+        this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
 
         window.addEventListener('resize', () => this.resize(), false);
 
@@ -137,7 +149,6 @@ export class RenderingService {
     }
 
     public render() {
-        //this.globe.rotation.y += 0.001;
         this.renderer.render( this.scene, this.camera );
     };
 
@@ -177,6 +188,32 @@ export class RenderingService {
         if (!this.mouseMoved) {
             this.selectCountry(e);
         }
+    }
+
+    private onWheel(e: WheelEvent) {
+        e.preventDefault();
+
+        // bounds won't be exact but that's good enough
+        const dist = this.camera.position.distanceTo(this.globe.position);
+
+        const cameraDisplacementVector = (this.globe.position.clone().sub(this.camera.position)).normalize();
+        cameraDisplacementVector.multiplyScalar(this.cameraDollySpeed);
+
+        if (Math.sign(e.deltaY) < 0) {
+            //  - is wheel forward, i.e camera moves in
+            // only move in if we are not already too close
+            if (dist > this.cameraDollyInMaxDist) {
+                this.camera.position.add(cameraDisplacementVector);
+            }
+        } else {
+            // + is wheel backwards, i.e camera moves out
+            // only move out if we are not already too far away
+            if (dist < this.cameraDollyOutMaxDist) {
+                this.camera.position.sub(cameraDisplacementVector);
+            }
+        }
+
+        this.controls?.update();
     }
 
     public selectCountry(event: MouseEvent) {
