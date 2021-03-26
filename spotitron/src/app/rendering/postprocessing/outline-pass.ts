@@ -32,7 +32,7 @@ export {BlurDirectionX, BlurDirectionY};
 export class OutlinePass extends Pass {
 
     visibleEdgeColor = new Color( 1, 1, 1 );
-	hiddenEdgeColor = new Color( 0.1, 0.04, 0.02 );
+	hiddenEdgeColor = new Color( 0.0, 0.0, 0.0 );
 	edgeGlow = 0.0;
 	usePatternTexture = false;
 	edgeThickness = 1.0;
