@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
+import { AnimationAction, AnimationClip, AnimationMixer, Clock, NumberKeyframeTrack, VectorKeyframeTrack } from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 import { CountryDataService } from '../shared/country-data.service';
@@ -13,6 +14,11 @@ import { FXAAShader } from './postprocessing/fxaa-shader';
 import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shared-pass';
+
+interface Animation {
+    mixer: AnimationMixer;
+    action: AnimationAction;
+}
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
@@ -49,6 +55,21 @@ export class RenderingService {
     private mouseMoved: boolean = false;
     private mousePosition: Position2D = {x: 0, y: 0};
     private mouseDragDelta: number = 5;
+
+    //animations
+    private clock = new Clock();
+    private activeAnimations: Animation[] = [];
+
+    // country extrude animation
+    private countryExtrudeClip = new AnimationClip('extrude', -1, [
+        new VectorKeyframeTrack(
+            '.scale',
+            [0, 1],     // times
+            [1.0, 1.0, 1.0, 1.5, 1.5, 1.5]  // values
+        )
+    ]);
+
+    private countryExtrudeAnimations: Map<string, Animation> = new Map();
 
 
     public init(charts: Map<string, CountryChart>) {
@@ -155,9 +176,26 @@ export class RenderingService {
             this.globe.add(cMesh);
             this.globe.add(cMeshExtrude);
 
+            // extrude animation
+            const cMixer = new AnimationMixer(cMeshExtrude);
+            cMixer.addEventListener('finished', (e) => {
+                for (let i = 0; i < this.activeAnimations.length; ++i) {
+                    if (this.activeAnimations[i].action === e.action) {
+                        this.activeAnimations.splice(i, 1);
+                        break;
+                    }
+                }
+            });
+
+            const cAction = cMixer.clipAction(this.countryExtrudeClip);
+            cAction.setLoop(THREE.LoopOnce, 1);
+            cAction.clampWhenFinished = true;
+            
+            this.countryExtrudeAnimations.set(name, {mixer: cMixer, action: cAction });
+
+            // loop
             i++;
         }
-
 
         // postprocessing
         this.composer = new EffectComposer(this.renderer);
@@ -191,6 +229,13 @@ export class RenderingService {
 
     public render() {
         this.composer?.render();
+
+        //animations
+        const delta = this.clock.getDelta();
+
+        for (let animation of this.activeAnimations) {
+            animation.mixer.update(delta);
+        }
     };
 
     public resize() {
@@ -307,9 +352,12 @@ export class RenderingService {
             countryObj.visible = false;
             countryObjExtrude.visible = true;
 
-            countryObjExtrude.scale.x = 1.5;
-            countryObjExtrude.scale.y = 1.5;
-            countryObjExtrude.scale.z = 1.5;
+            const animation = this.countryExtrudeAnimations.get(country);
+
+            if (animation) {
+                animation.action.play();
+                this.activeAnimations.push(animation);
+            }
         }
     }
 }
