@@ -28,6 +28,8 @@ export class RenderingService {
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
 
+    private countryExtrudeSuffix = "_extrude";
+
     // postprocessing
     private composer: EffectComposer | undefined;
     private outlinePass: OutlinePass | undefined;
@@ -98,9 +100,9 @@ export class RenderingService {
         // key is url for number 1 song cover
         const countryMaterials = new Map<string, THREE.ShaderMaterial>();
 
-        for (var name in countries) {
-            //console.log(name);
-            let cGeometry = new Map3DGeometry (countries[name], 0);
+        for (let name in countries) {
+            let cGeometry = new Map3DGeometry (countries[name], 2);
+            let cGeometryExtrude = new Map3DGeometry (countries[name], 0)
 
             let material: THREE.ShaderMaterial | undefined = defaultCountryMaterial;
             let url = '';
@@ -141,9 +143,17 @@ export class RenderingService {
             }
 
             let cMesh = new THREE.Mesh (cGeometry, material);
+            let cMeshExtrude = new THREE.Mesh (cGeometryExtrude, material);
             
+            //TODO are we smart about this or will everything be considered for rendering??
+            cMesh.visible = true;
+            cMeshExtrude.visible = false;
+
             cMesh.name = name;
+            cMeshExtrude.name = name + this.countryExtrudeSuffix;
+
             this.globe.add(cMesh);
+            this.globe.add(cMeshExtrude);
 
             i++;
         }
@@ -233,7 +243,7 @@ export class RenderingService {
             const country = this.getCountryUnderMouse(e);
 
             if (country) {
-                this.selectCountry(country);
+                this.selectCountry(country.name);
             }
         }
     }
@@ -281,8 +291,7 @@ export class RenderingService {
 
         if (intersects && intersects[0]) {
             let mesh = intersects[0].object;
-            if (mesh.name) {
-                //console.log(mesh.name);
+            if (mesh.visible && mesh.name) {
                 return mesh;
             }
         }
@@ -290,9 +299,17 @@ export class RenderingService {
         return null;
     }
 
-    public selectCountry(countryObj: THREE.Object3D) {    
-        countryObj.scale.x = 1.5;
-        countryObj.scale.y = 1.5;
-        countryObj.scale.z = 1.5;
+    public selectCountry(country: string) {
+        const countryObj = this.globe.getObjectByName(country);
+        const countryObjExtrude = this.globe.getObjectByName(country + this.countryExtrudeSuffix);
+
+        if (countryObj && countryObjExtrude) {
+            countryObj.visible = false;
+            countryObjExtrude.visible = true;
+
+            countryObjExtrude.scale.x = 1.5;
+            countryObjExtrude.scale.y = 1.5;
+            countryObjExtrude.scale.z = 1.5;
+        }
     }
 }
