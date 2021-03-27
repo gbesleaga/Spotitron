@@ -7,7 +7,12 @@ import { OrbitControls } from 'three-orbitcontrols-ts';
 import { CountryDataService } from '../shared/country-data.service';
 import { CountryChart, Position2D } from '../shared/types';
 
-import { Map3DGeometry } from './Map3DGeometry';
+import { Map3DGeometry } from './geometry/Map3DGeometry';
+import { EffectComposer } from './postprocessing/effect-composer';
+import { FXAAShader } from './postprocessing/fxaa-shader';
+import { OutlinePass } from './postprocessing/outline-pass';
+import { RenderPass } from './postprocessing/render-pass';
+import { ShaderPass } from './postprocessing/shared-pass';
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
@@ -22,6 +27,13 @@ export class RenderingService {
     private renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true });
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
+
+    private countryExtrudeSuffix = "_extrude";
+
+    // postprocessing
+    private composer: EffectComposer | undefined;
+    private outlinePass: OutlinePass | undefined;
+    private effectFXAA: ShaderPass | undefined;
 
     // initial positions
     // globe is at 0,0,0 and doesn't move
@@ -88,9 +100,9 @@ export class RenderingService {
         // key is url for number 1 song cover
         const countryMaterials = new Map<string, THREE.ShaderMaterial>();
 
-        for (var name in countries) {
-            //console.log(name);
-            let cGeometry = new Map3DGeometry (countries[name], 0);
+        for (let name in countries) {
+            let cGeometry = new Map3DGeometry (countries[name], 2);
+            let cGeometryExtrude = new Map3DGeometry (countries[name], 0)
 
             let material: THREE.ShaderMaterial | undefined = defaultCountryMaterial;
             let url = '';
@@ -131,13 +143,42 @@ export class RenderingService {
             }
 
             let cMesh = new THREE.Mesh (cGeometry, material);
+            let cMeshExtrude = new THREE.Mesh (cGeometryExtrude, material);
             
+            //TODO are we smart about this or will everything be considered for rendering??
+            cMesh.visible = true;
+            cMeshExtrude.visible = false;
+
             cMesh.name = name;
+            cMeshExtrude.name = name + this.countryExtrudeSuffix;
+
             this.globe.add(cMesh);
+            this.globe.add(cMeshExtrude);
 
             i++;
         }
 
+
+        // postprocessing
+        this.composer = new EffectComposer(this.renderer);
+
+        const renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(renderPass);
+
+        this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
+        this.composer.addPass(this.outlinePass);
+
+        this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {
+            this.outlinePass!.patternTexture = texture;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+        });
+
+        this.effectFXAA = new ShaderPass(new FXAAShader());
+        this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+        this.composer.addPass(this.effectFXAA);
+
+        // event listening
         this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
         this.renderer.domElement.addEventListener('mouseup', (e) =>   this.onMouseUp(e));
@@ -149,7 +190,7 @@ export class RenderingService {
     }
 
     public render() {
-        this.renderer.render( this.scene, this.camera );
+        this.composer?.render();
     };
 
     public resize() {
@@ -159,6 +200,9 @@ export class RenderingService {
 
             // notify the renderer of the size change
             this.renderer.setSize(w, h);
+            this.composer?.setSize(w,h);
+            this.effectFXAA?.uniforms[ 'resolution' ].value.set( 1 / window.innerWidth, 1 / window.innerHeight );
+
             // update the camera
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
@@ -179,6 +223,16 @@ export class RenderingService {
                 Math.abs(this.mousePosition.y - e.pageY) > this.mouseDragDelta) {
                 this.mouseMoved = true;
             }
+        } else {
+            if (this.outlinePass) {
+                const country = this.getCountryUnderMouse(e);
+
+                if (country) {
+                    this.outlinePass.selectedObjects = [country];
+                } else {
+                    this.outlinePass.selectedObjects = [];
+                }
+            }
         }
     }
 
@@ -186,7 +240,11 @@ export class RenderingService {
         this.mousePressed = false;
 
         if (!this.mouseMoved) {
-            this.selectCountry(e);
+            const country = this.getCountryUnderMouse(e);
+
+            if (country) {
+                this.selectCountry(country.name);
+            }
         }
     }
 
@@ -216,7 +274,7 @@ export class RenderingService {
         this.controls?.update();
     }
 
-    public selectCountry(event: MouseEvent) {
+    private getCountryUnderMouse(event: MouseEvent): THREE.Object3D | null {
         // calculate mouse position in normalized device coordinates
 	    // (-1 to +1) for both components
         const mouse = new THREE.Vector2();
@@ -233,14 +291,25 @@ export class RenderingService {
 
         if (intersects && intersects[0]) {
             let mesh = intersects[0].object;
-            if (mesh.name) {
-                console.log(mesh.name);
-                //console.log(mesh.scale);
-
-                mesh.scale.x = 1.5;
-                mesh.scale.y = 1.5;
-                mesh.scale.z = 1.5;
+            if (mesh.visible && mesh.name) {
+                return mesh;
             }
+        }
+
+        return null;
+    }
+
+    public selectCountry(country: string) {
+        const countryObj = this.globe.getObjectByName(country);
+        const countryObjExtrude = this.globe.getObjectByName(country + this.countryExtrudeSuffix);
+
+        if (countryObj && countryObjExtrude) {
+            countryObj.visible = false;
+            countryObjExtrude.visible = true;
+
+            countryObjExtrude.scale.x = 1.5;
+            countryObjExtrude.scale.y = 1.5;
+            countryObjExtrude.scale.z = 1.5;
         }
     }
 }
