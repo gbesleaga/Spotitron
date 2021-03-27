@@ -26,7 +26,7 @@ export class RenderPass extends Pass {
         this.overrideMaterial = overrideMaterial;
     
         this.clearColor = clearColor;
-        this.clearAlpha = ( clearAlpha !== undefined ) ? clearAlpha : 0;
+        this.clearAlpha = (clearAlpha !== undefined) ? clearAlpha : 0;
     }
 
     render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime?: number, maskActive?: boolean) {
@@ -53,11 +53,11 @@ export class RenderPass extends Pass {
 		renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
 
 		// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
-		if ( this.clear ) {
+		if (this.clear) {
             renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
         } 
 
-		renderer.render( this.scene, this.camera );
+		renderer.render(this.scene, this.camera);
 
 		if (this.clearColor) {
 			renderer.setClearColor( this._oldClearColor, oldClearAlpha );

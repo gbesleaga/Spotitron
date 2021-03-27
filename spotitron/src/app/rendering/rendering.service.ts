@@ -165,7 +165,7 @@ export class RenderingService {
         const renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(renderPass);
 
-        this.outlinePass = new OutlinePass( new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
+        this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
         this.composer.addPass(this.outlinePass);
 
         this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {

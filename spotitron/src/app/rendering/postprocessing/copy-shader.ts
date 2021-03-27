@@ -3,7 +3,6 @@
  */
 
  export class CopyShader {
-	
     uniforms = {
         'tDiffuse': { value: null },
 		'opacity': { value: 1.0 }
@@ -15,10 +14,10 @@
 		'void main() {',
 
 		'	vUv = uv;',
-		'	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+		'	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
 
 		'}'
-	].join( '\n' );
+	].join('\n');
 
 	fragmentShader = [
 
@@ -30,9 +29,9 @@
 
 		'void main() {',
 
-		'	vec4 texel = texture2D( tDiffuse, vUv );',
+		'	vec4 texel = texture2D(tDiffuse, vUv);',
 		'	gl_FragColor = opacity * texel;',
 
 		'}'
-	].join( '\n' )
+	].join('\n')
 }

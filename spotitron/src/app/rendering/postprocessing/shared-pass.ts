@@ -9,7 +9,6 @@ import {
 import { FullScreenQuad, Pass } from './pass';
 
 export class ShaderPass extends Pass {
-    
     //TODO any
     textureID: any;
     shader: any;
@@ -42,7 +41,7 @@ export class ShaderPass extends Pass {
     setSize(width: number, height: number): void {
     }
 
-    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean) {
+    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime?: number, maskActive?: boolean) {
 		if (this.uniforms && this.uniforms[this.textureID]) {
 			this.uniforms[this.textureID].value = readBuffer.texture;
 		}

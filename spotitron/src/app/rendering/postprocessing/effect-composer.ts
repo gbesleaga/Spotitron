@@ -1,9 +1,6 @@
 import {
 	Clock,
 	LinearFilter,
-	Mesh,
-	OrthographicCamera,
-	PlaneGeometry,
 	RGBAFormat,
 	Vector2,
     WebGLRenderer,
@@ -13,12 +10,9 @@ import {
 import { CopyShader } from './copy-shader';
 import { Pass } from './pass';
 import { ShaderPass } from './shared-pass';
-//import { MaskPass } from '../postprocessing/MaskPass.js';
-//import { ClearMaskPass } from '../postprocessing/MaskPass.js';
 
 
 export class EffectComposer {
-
     renderer: WebGLRenderer;
     renderTarget1: WebGLRenderTarget;
     renderTarget2: WebGLRenderTarget;
@@ -48,12 +42,12 @@ export class EffectComposer {
                 format: RGBAFormat
             };
 
-            const size = renderer.getSize( new Vector2() );
+            const size = renderer.getSize(new Vector2());
             this._pixelRatio = renderer.getPixelRatio();
             this._width = size.width;
             this._height = size.height;
 
-            renderTarget = new WebGLRenderTarget( this._width * this._pixelRatio, this._height * this._pixelRatio, parameters );
+            renderTarget = new WebGLRenderTarget(this._width * this._pixelRatio, this._height * this._pixelRatio, parameters);
             renderTarget.texture.name = 'EffectComposer.rt1';
         } else {
             this._pixelRatio = 1;
@@ -68,7 +62,7 @@ export class EffectComposer {
         this.writeBuffer = this.renderTarget1;
         this.readBuffer = this.renderTarget2;
 
-        this.copyPass = new ShaderPass( CopyShader, undefined);
+        this.copyPass = new ShaderPass(new CopyShader, undefined);
     }
 
     swapBuffers() {
@@ -145,22 +139,6 @@ export class EffectComposer {
 
 				this.swapBuffers();
 			}
-
-            /*
-			if ( MaskPass !== undefined ) {
-
-				if ( pass instanceof MaskPass ) {
-
-					maskActive = true;
-
-				} else if ( pass instanceof ClearMaskPass ) {
-
-					maskActive = false;
-
-				}
-
-			}
-            */
 		}
 		
         this.renderer.setRenderTarget(currentRenderTarget);

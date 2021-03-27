@@ -23,21 +23,15 @@ abstract class Pass {
 
     abstract setSize(width: number, height: number): void;
 
-    //TODO figure out these any's
     abstract render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean): void;
 }
 
 export { Pass };
 
 // Helper for passes that need to fill the viewport with a single quad.
-
-// Important: It's actually a hack to put FullScreenQuad into the Pass namespace. This is only
-// done to make examples/js code work. Normally, FullScreenQuad should be exported
-// from this module like Pass.
-
 export class FullScreenQuad {
-    camera = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-	geometry = new PlaneGeometry( 2, 2 );
+    camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+	geometry = new PlaneGeometry(2, 2);
     _mesh: Mesh;
 
     constructor(material: Material | undefined) {

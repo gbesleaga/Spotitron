@@ -12,7 +12,7 @@ import {
 export class FXAAShader {
 	uniforms = {
 		'tDiffuse': { value: null },
-		'resolution': { value: new Vector2( 1 / 1024, 1 / 512 ) }
+		'resolution': { value: new Vector2(1 / 1024, 1 / 512) }
 	};
 
 	vertexShader = [
@@ -21,10 +21,10 @@ export class FXAAShader {
 		'void main() {',
 
 		'	vUv = uv;',
-		'	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+		'	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
 
 		'}'
-	].join( '\n' );
+	].join('\n');
 
 	fragmentShader = [
 		'precision highp float;',
@@ -1106,6 +1106,6 @@ export class FXAAShader {
 		'  // TODO avoid querying texture twice for same texel',
 		'  gl_FragColor.a = texture2D(tDiffuse, vUv).a;',
 		'}'
-	].join( '\n' )
+	].join('\n')
 }
 
