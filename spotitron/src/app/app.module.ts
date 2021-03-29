@@ -9,6 +9,7 @@ import { environment } from 'src/environments/environment';
 import { AuthGuardService, AuthService, SpotifyHttpClientService, SpotifyLibModule } from 'spotify-lib';
 import { HttpClientModule } from '@angular/common/http';
 import { MainViewComponent } from './views/main-view/main-view.component';
+import { CountryViewComponent } from './views/country-view/country-view.component';
 
 const appRoutes: Routes = [
   {
@@ -35,7 +36,8 @@ const appRoutes: Routes = [
     AppComponent,
     AuthRedirectComponent,
     AuthCallbackComponent,
-    MainViewComponent
+    MainViewComponent,
+    CountryViewComponent
   ],
   imports: [
     BrowserModule,

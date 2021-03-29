@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
+import { AnimationAction, AnimationClip, AnimationMixer, Clock, NumberKeyframeTrack, VectorKeyframeTrack } from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 import { CountryDataService } from '../shared/country-data.service';
@@ -14,11 +15,19 @@ import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shared-pass';
 
+interface Animation {
+    mixer: AnimationMixer;
+    action: AnimationAction;
+}
+
 @Injectable({providedIn: 'root'})
 export class RenderingService {
 
     constructor(private countryDataService: CountryDataService) {
     }
+
+    countrySelected: boolean = false;
+    onCountrySelectedCallback: (() => void) | undefined = undefined;
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -49,6 +58,22 @@ export class RenderingService {
     private mouseMoved: boolean = false;
     private mousePosition: Position2D = {x: 0, y: 0};
     private mouseDragDelta: number = 5;
+
+    //animations
+    private clock = new Clock();
+    private activeAnimations: Animation[] = [];
+    private cameraAnimating: boolean = false;
+
+    // country extrude animation
+    private countryExtrudeClip = new AnimationClip('extrude', -1, [
+        new VectorKeyframeTrack(
+            '.scale',
+            [0, 1],     // times
+            [1.0, 1.0, 1.0, 1.3, 1.3, 1.3]  // values
+        )
+    ]);
+
+    private countryExtrudeAnimations: Map<string, Animation> = new Map();
 
 
     public init(charts: Map<string, CountryChart>) {
@@ -155,9 +180,26 @@ export class RenderingService {
             this.globe.add(cMesh);
             this.globe.add(cMeshExtrude);
 
+            // extrude animation
+            const cMixer = new AnimationMixer(cMeshExtrude);
+            cMixer.addEventListener('finished', (e) => {
+                for (let i = 0; i < this.activeAnimations.length; ++i) {
+                    if (this.activeAnimations[i].action === e.action) {
+                        this.activeAnimations.splice(i, 1);
+                        break;
+                    }
+                }
+            });
+
+            const cAction = cMixer.clipAction(this.countryExtrudeClip);
+            cAction.setLoop(THREE.LoopOnce, 1);
+            cAction.clampWhenFinished = true;
+            
+            this.countryExtrudeAnimations.set(name, {mixer: cMixer, action: cAction });
+
+            // loop
             i++;
         }
-
 
         // postprocessing
         this.composer = new EffectComposer(this.renderer);
@@ -179,9 +221,9 @@ export class RenderingService {
         this.composer.addPass(this.effectFXAA);
 
         // event listening
-        this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
-        this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
-        this.renderer.domElement.addEventListener('mouseup', (e) =>   this.onMouseUp(e));
+        this.renderer.domElement.addEventListener('pointerdown', (e) => this.onMouseDown(e));
+        this.renderer.domElement.addEventListener('pointermove', (e) => this.onMouseMove(e));
+        this.renderer.domElement.addEventListener('pointerup', (e) =>   this.onMouseUp(e));
         this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
 
         window.addEventListener('resize', () => this.resize(), false);
@@ -191,6 +233,17 @@ export class RenderingService {
 
     public render() {
         this.composer?.render();
+
+        //animations
+        const delta = this.clock.getDelta();
+
+        for (let animation of this.activeAnimations) {
+            animation.mixer.update(delta);
+        }
+
+        if (this.cameraAnimating) {
+            this.camera.lookAt(0,0,0); // keep camera looking at center
+        }
     };
 
     public resize() {
@@ -244,6 +297,9 @@ export class RenderingService {
 
             if (country) {
                 this.selectCountry(country.name);
+                if (this.outlinePass) {
+                    this.outlinePass.selectedObjects = [country];
+                }   
             }
         }
     }
@@ -307,9 +363,72 @@ export class RenderingService {
             countryObj.visible = false;
             countryObjExtrude.visible = true;
 
-            countryObjExtrude.scale.x = 1.5;
-            countryObjExtrude.scale.y = 1.5;
-            countryObjExtrude.scale.z = 1.5;
+            // start country extrude animation
+            const animation = this.countryExtrudeAnimations.get(country);
+
+            if (animation) {
+                animation.action.play();
+                this.activeAnimations.push(animation);
+            }
+
+            // move camera above country
+            this.cameraAnimating = true;
+
+            const center = this.getCenterPointOfMesh(countryObj as THREE.Mesh);
+
+            // move along the direction of center globe (0,0,0) and this point (away from center)
+            const direction = center.normalize();
+            const newCameraPosition = direction.multiplyScalar(this.cameraDollyInMaxDist);
+
+            const cameraMoveClip = new AnimationClip('move-n-look', -1, [
+                new VectorKeyframeTrack(
+                    '.position',
+                    [0, 1],     // times
+                    [this.camera.position.x, this.camera.position.y, this.camera.position.z, newCameraPosition.x, newCameraPosition.y, newCameraPosition.z]  // values
+                )
+            ]);
+
+            const mixer = new AnimationMixer(this.camera);
+            mixer.addEventListener('finished', (e) => {
+                this.cameraAnimating = false;
+                this.controls?.update();
+                this.countrySelected = true;
+                
+                if (this.onCountrySelectedCallback) {
+                    this.onCountrySelectedCallback();
+                }
+
+                for (let i = 0; i < this.activeAnimations.length; ++i) {
+                    if (this.activeAnimations[i].action === e.action) {
+                        this.activeAnimations.splice(i, 1);
+                        break;
+                    }
+                }
+            });
+
+            const action = mixer.clipAction(cameraMoveClip);
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
+
+            this.activeAnimations.push({mixer: mixer, action: action});
+
+            action.play();
         }
+    }
+
+    private getCenterPointOfMesh(mesh: THREE.Mesh) {
+        const geometry = mesh.geometry;
+        geometry.computeBoundingBox();
+        
+        let center = new THREE.Vector3();
+        geometry.boundingBox!.getCenter(center);
+        
+        mesh.localToWorld(center );
+        
+        return center;
+    }
+
+    public registerOnCountrySelectedCallback(callback: () => void) {
+        this.onCountrySelectedCallback = callback;
     }
 }
