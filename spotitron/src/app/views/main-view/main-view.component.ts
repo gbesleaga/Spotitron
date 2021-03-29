@@ -18,15 +18,21 @@ export class MainViewComponent implements AfterViewInit {
 
   private charts: Map<string, CountryChart> = new Map();
 
+  public countrySelected = false;
+
   constructor(
     private countryDataService: CountryDataService,
     private renderingService: RenderingService,
     private animationService: AnimationService,
     private authService: AuthService,
-    private spotifyService: SpotifyHttpClientService ) { }
+    private spotifyService: SpotifyHttpClientService ) {
+      this.renderingService.registerOnCountrySelectedCallback(() => {
+        this.countrySelected = true;
+      })
+    }
 
   ngAfterViewInit(){
-    this.fetchNextCountry(0, this.countryDataService.countryNames.length); //TODO fetch all
+    this.fetchNextCountry(0, this.countryDataService.countryNames.length);
   }
 
   private fetchNextCountry(at: number, stop: number) {
@@ -39,7 +45,8 @@ export class MainViewComponent implements AfterViewInit {
 
     let step = stop - at;
 
-    if (step > 30) step = 30;
+    //TODO figure out how many requests we can send before we get timed-out; 30?
+    if (step > 10) step = 10;
 
     for (let i = at; i < at + step; ++i) {
       const request =  this.spotifyService.getCountryChart({accessToken: this.authService.getAccessToken(), countryName: this.countryDataService.countryNames[i] }).pipe(catchError(error => of(error)), map(chart => ({...chart, country: this.countryDataService.countryNames[i]})));

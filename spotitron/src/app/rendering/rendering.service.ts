@@ -27,6 +27,7 @@ export class RenderingService {
     }
 
     countrySelected: boolean = false;
+    onCountrySelectedCallback: (() => void) | undefined = undefined;
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -372,7 +373,6 @@ export class RenderingService {
 
             // move camera above country
             this.cameraAnimating = true;
-            this.countrySelected = true;
 
             const center = this.getCenterPointOfMesh(countryObj as THREE.Mesh);
 
@@ -392,6 +392,11 @@ export class RenderingService {
             mixer.addEventListener('finished', (e) => {
                 this.cameraAnimating = false;
                 this.controls?.update();
+                this.countrySelected = true;
+                
+                if (this.onCountrySelectedCallback) {
+                    this.onCountrySelectedCallback();
+                }
 
                 for (let i = 0; i < this.activeAnimations.length; ++i) {
                     if (this.activeAnimations[i].action === e.action) {
@@ -421,5 +426,9 @@ export class RenderingService {
         mesh.localToWorld(center );
         
         return center;
+    }
+
+    public registerOnCountrySelectedCallback(callback: () => void) {
+        this.onCountrySelectedCallback = callback;
     }
 }
