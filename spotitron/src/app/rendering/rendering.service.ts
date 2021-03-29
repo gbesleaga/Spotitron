@@ -26,6 +26,8 @@ export class RenderingService {
     constructor(private countryDataService: CountryDataService) {
     }
 
+    countrySelected: boolean = false;
+
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private controls: OrbitControls | undefined = undefined;
@@ -59,13 +61,14 @@ export class RenderingService {
     //animations
     private clock = new Clock();
     private activeAnimations: Animation[] = [];
+    private cameraAnimating: boolean = false;
 
     // country extrude animation
     private countryExtrudeClip = new AnimationClip('extrude', -1, [
         new VectorKeyframeTrack(
             '.scale',
             [0, 1],     // times
-            [1.0, 1.0, 1.0, 1.5, 1.5, 1.5]  // values
+            [1.0, 1.0, 1.0, 1.3, 1.3, 1.3]  // values
         )
     ]);
 
@@ -217,9 +220,9 @@ export class RenderingService {
         this.composer.addPass(this.effectFXAA);
 
         // event listening
-        this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
-        this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
-        this.renderer.domElement.addEventListener('mouseup', (e) =>   this.onMouseUp(e));
+        this.renderer.domElement.addEventListener('pointerdown', (e) => this.onMouseDown(e));
+        this.renderer.domElement.addEventListener('pointermove', (e) => this.onMouseMove(e));
+        this.renderer.domElement.addEventListener('pointerup', (e) =>   this.onMouseUp(e));
         this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
 
         window.addEventListener('resize', () => this.resize(), false);
@@ -235,6 +238,10 @@ export class RenderingService {
 
         for (let animation of this.activeAnimations) {
             animation.mixer.update(delta);
+        }
+
+        if (this.cameraAnimating) {
+            this.camera.lookAt(0,0,0); // keep camera looking at center
         }
     };
 
@@ -289,6 +296,9 @@ export class RenderingService {
 
             if (country) {
                 this.selectCountry(country.name);
+                if (this.outlinePass) {
+                    this.outlinePass.selectedObjects = [country];
+                }   
             }
         }
     }
@@ -352,12 +362,64 @@ export class RenderingService {
             countryObj.visible = false;
             countryObjExtrude.visible = true;
 
+            // start country extrude animation
             const animation = this.countryExtrudeAnimations.get(country);
 
             if (animation) {
                 animation.action.play();
                 this.activeAnimations.push(animation);
             }
+
+            // move camera above country
+            this.cameraAnimating = true;
+            this.countrySelected = true;
+
+            const center = this.getCenterPointOfMesh(countryObj as THREE.Mesh);
+
+            // move along the direction of center globe (0,0,0) and this point (away from center)
+            const direction = center.normalize();
+            const newCameraPosition = direction.multiplyScalar(this.cameraDollyInMaxDist);
+
+            const cameraMoveClip = new AnimationClip('move-n-look', -1, [
+                new VectorKeyframeTrack(
+                    '.position',
+                    [0, 1],     // times
+                    [this.camera.position.x, this.camera.position.y, this.camera.position.z, newCameraPosition.x, newCameraPosition.y, newCameraPosition.z]  // values
+                )
+            ]);
+
+            const mixer = new AnimationMixer(this.camera);
+            mixer.addEventListener('finished', (e) => {
+                this.cameraAnimating = false;
+                this.controls?.update();
+
+                for (let i = 0; i < this.activeAnimations.length; ++i) {
+                    if (this.activeAnimations[i].action === e.action) {
+                        this.activeAnimations.splice(i, 1);
+                        break;
+                    }
+                }
+            });
+
+            const action = mixer.clipAction(cameraMoveClip);
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
+
+            this.activeAnimations.push({mixer: mixer, action: action});
+
+            action.play();
         }
+    }
+
+    private getCenterPointOfMesh(mesh: THREE.Mesh) {
+        const geometry = mesh.geometry;
+        geometry.computeBoundingBox();
+        
+        let center = new THREE.Vector3();
+        geometry.boundingBox!.getCenter(center);
+        
+        mesh.localToWorld(center );
+        
+        return center;
     }
 }
