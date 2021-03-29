@@ -18,7 +18,10 @@ import { ShaderPass } from './postprocessing/shared-pass';
 interface Animation {
     mixer: AnimationMixer;
     action: AnimationAction;
+    reverseAction: AnimationAction | undefined;
 }
+
+const COUNTRY_EXTRUDE_SCALE = 1.3;
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
@@ -27,6 +30,8 @@ export class RenderingService {
     }
 
     countrySelected: boolean = false;
+    selectedCountryName: string = "";
+
     onCountrySelectedCallback: (() => void) | undefined = undefined;
 
     private scene: THREE.Scene = new THREE.Scene();
@@ -69,11 +74,19 @@ export class RenderingService {
         new VectorKeyframeTrack(
             '.scale',
             [0, 1],     // times
-            [1.0, 1.0, 1.0, 1.3, 1.3, 1.3]  // values
+            [1.0, 1.0, 1.0, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE]  // values
         )
     ]);
 
-    private countryExtrudeAnimations: Map<string, Animation> = new Map();
+    private countryIntrudeClip = new AnimationClip('intrude', -1, [
+        new VectorKeyframeTrack(
+            '.scale',
+            [0, 1],     // times
+            [COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, 1.0, 1.0, 1.0]  // values
+        )
+    ]);
+
+    private countryAnimations: Map<string, Animation> = new Map();
 
 
     public init(charts: Map<string, CountryChart>) {
@@ -180,11 +193,21 @@ export class RenderingService {
             this.globe.add(cMesh);
             this.globe.add(cMeshExtrude);
 
-            // extrude animation
+            // country animations
             const cMixer = new AnimationMixer(cMeshExtrude);
             cMixer.addEventListener('finished', (e) => {
                 for (let i = 0; i < this.activeAnimations.length; ++i) {
+                    let found: boolean = false;
+
                     if (this.activeAnimations[i].action === e.action) {
+                        found = true;
+                    } else if (this.activeAnimations[i].reverseAction === e.action) {
+                        found = true;
+                        cMesh.visible = true;
+                        cMeshExtrude.visible = false;
+                    }
+
+                    if (found) {
                         this.activeAnimations.splice(i, 1);
                         break;
                     }
@@ -195,7 +218,11 @@ export class RenderingService {
             cAction.setLoop(THREE.LoopOnce, 1);
             cAction.clampWhenFinished = true;
             
-            this.countryExtrudeAnimations.set(name, {mixer: cMixer, action: cAction });
+            const cReverseAction = cMixer.clipAction(this.countryIntrudeClip);
+            cReverseAction.setLoop(THREE.LoopOnce, 1);
+            cReverseAction.clampWhenFinished = true;
+
+            this.countryAnimations.set(name, {mixer: cMixer, action: cAction, reverseAction: cReverseAction });
 
             // loop
             i++;
@@ -364,15 +391,18 @@ export class RenderingService {
             countryObjExtrude.visible = true;
 
             // start country extrude animation
-            const animation = this.countryExtrudeAnimations.get(country);
+            const animation = this.countryAnimations.get(country);
 
             if (animation) {
+                animation.mixer.setTime(0);
+                animation.action.paused = false;
                 animation.action.play();
                 this.activeAnimations.push(animation);
             }
 
             // move camera above country
             this.cameraAnimating = true;
+            this.selectedCountryName = country;
 
             const center = this.getCenterPointOfMesh(countryObj as THREE.Mesh);
 
@@ -410,10 +440,25 @@ export class RenderingService {
             action.setLoop(THREE.LoopOnce, 1);
             action.clampWhenFinished = true;
 
-            this.activeAnimations.push({mixer: mixer, action: action});
+            this.activeAnimations.push({mixer: mixer, action: action, reverseAction: undefined});
 
             action.play();
         }
+    }
+
+    public deselectCountry() {
+        // reverse country extrude animation
+        const animation = this.countryAnimations.get(this.selectedCountryName);
+
+        if (animation && animation.reverseAction) {
+            animation.mixer.setTime(0);
+            animation.reverseAction.paused = false;
+            animation.reverseAction.play();
+            this.activeAnimations.push(animation);
+        }
+        
+        this.countrySelected = false;
+        this.selectedCountryName = "";
     }
 
     private getCenterPointOfMesh(mesh: THREE.Mesh) {

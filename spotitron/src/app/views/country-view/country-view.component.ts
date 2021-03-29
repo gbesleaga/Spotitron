@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { RenderingService } from 'src/app/rendering/rendering.service';
 
 @Component({
   selector: 'app-country-view',
@@ -10,7 +11,7 @@ export class CountryViewComponent implements OnInit {
   @Input() show: boolean = false;
   @Output() showChange = new EventEmitter<boolean>();
 
-  constructor() { }
+  constructor(private renderingService: RenderingService) { }
 
   ngOnInit(): void {
   }
@@ -22,5 +23,7 @@ export class CountryViewComponent implements OnInit {
   onLeaveView() {
     this.show = false;
     this.showChange.emit(this.show);
+
+    this.renderingService.deselectCountry();
   }
 }
