@@ -131,7 +131,7 @@ export class RenderingService {
 
         this.globe.add(new THREE.Mesh(geometry, material));
 
-        let countries: any = this.countryDataService.data;
+        let countries: any = this.countryDataService.geometryData;
 
         let i = 0;
 
