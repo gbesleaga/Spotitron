@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { RenderingService } from 'src/app/rendering/rendering.service';
+import { Component, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { CountrySelectionService } from 'src/app/shared/country-selection.service';
 
 @Component({
   selector: 'app-country-view',
@@ -8,22 +9,22 @@ import { RenderingService } from 'src/app/rendering/rendering.service';
 })
 export class CountryViewComponent implements OnInit {
 
-  @Input() show: boolean = false;
-  @Output() showChange = new EventEmitter<boolean>();
+  show: boolean = false;
 
-  constructor(private renderingService: RenderingService) { }
+  selectedCountrySubscription: Subscription | undefined = undefined;
+
+  constructor(private countrySelectionService: CountrySelectionService) {
+    this.countrySelectionService.getSelectedCountry().subscribe( country => {
+      this.show = true;
+      console.log(country);
+    });
+  }
 
   ngOnInit(): void {
   }
 
-  onEnterView() {
-    this.show = true;
-  }
-
   onLeaveView() {
     this.show = false;
-    this.showChange.emit(this.show);
-
-    this.renderingService.deselectCountry();
+    this.countrySelectionService.clearSelection();
   }
 }

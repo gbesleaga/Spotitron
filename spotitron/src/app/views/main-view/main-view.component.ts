@@ -14,17 +14,13 @@ import { CountryDataService } from 'src/app/shared/country-data.service';
   styleUrls: ['./main-view.component.css']
 })
 export class MainViewComponent implements AfterViewInit, OnDestroy {
-  public countrySelected = false;
-
+  
   private chartDataSubscribtion: Subscription | undefined = undefined;
 
   constructor(
     private countryDataService: CountryDataService,
     private renderingService: RenderingService,
     private animationService: AnimationService) {
-      this.renderingService.registerOnCountrySelectedCallback(() => {
-        this.countrySelected = true;
-      })
     }
 
   ngAfterViewInit(){

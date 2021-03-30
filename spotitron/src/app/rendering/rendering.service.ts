@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
-import { AnimationAction, AnimationClip, AnimationMixer, Clock, NumberKeyframeTrack, VectorKeyframeTrack } from 'three';
+import { AnimationAction, AnimationClip, AnimationMixer, Clock, VectorKeyframeTrack } from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 import { CountryDataService } from '../shared/country-data.service';
+import { CountrySelectionService } from '../shared/country-selection.service';
 import { CountryChart, Position2D } from '../shared/types';
 
 import { Map3DGeometry } from './geometry/Map3DGeometry';
@@ -26,7 +27,12 @@ const COUNTRY_EXTRUDE_SCALE = 1.3;
 @Injectable({providedIn: 'root'})
 export class RenderingService {
 
-    constructor(private countryDataService: CountryDataService) {
+    constructor(
+        private countryDataService: CountryDataService,
+        private countrySelectionService: CountrySelectionService) {
+            this.countrySelectionService.onClearSelection().subscribe( () => {
+                this.deselectCountry();
+            });
     }
 
     countrySelected: boolean = false;
@@ -424,9 +430,7 @@ export class RenderingService {
                 this.controls?.update();
                 this.countrySelected = true;
                 
-                if (this.onCountrySelectedCallback) {
-                    this.onCountrySelectedCallback();
-                }
+                this.countrySelectionService.selectCountry(this.selectedCountryName);
 
                 for (let i = 0; i < this.activeAnimations.length; ++i) {
                     if (this.activeAnimations[i].action === e.action) {
@@ -471,9 +475,5 @@ export class RenderingService {
         mesh.localToWorld(center );
         
         return center;
-    }
-
-    public registerOnCountrySelectedCallback(callback: () => void) {
-        this.onCountrySelectedCallback = callback;
     }
 }
