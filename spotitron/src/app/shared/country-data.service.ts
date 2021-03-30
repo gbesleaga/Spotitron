@@ -30,7 +30,8 @@ export class CountryDataService {
     }
 
     public fetchChartData() {
-        this.fetchNextCountry(0, this.countryNames.length);
+        //TODO get all
+        this.fetchNextCountry(0, 20 /*this.countryNames.length*/);
     }
 
     private fetchNextCountry(at: number, stop: number) {
@@ -73,6 +74,10 @@ export class CountryDataService {
         return this.charDataSubject.asObservable();
     }
 
+    public getChartDataForCountry(country: string): CountryChart | undefined {
+        return this.chartData.get(country);
+    }
+
     private onChartDataReady() {
         for (let chart of this.chartData) {
             //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
@@ -83,4 +88,5 @@ export class CountryDataService {
 
         this.charDataSubject.next(this.chartData);
     }
+
 }
