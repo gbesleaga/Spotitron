@@ -1,2 +1,16 @@
 <div [ngClass]="('overlay ' + (show? 'on' : 'off'))" (click)="onLeaveView()">
+    <div class="vcontainer">
+        <div>
+            <h1>{{chartName}}</h1>
+        </div>
+
+        <div class="hcontainer"  *ngFor="let track of displayTracks; let i = index" (mouseenter)="onDisplayTrackHover(i)" (mouseleave)="onDisplayTrackHover(-1)">
+            <div class="item-state"></div>
+            <div class="item-title-img"></div>
+            <div class="item-title">{{track.name}}</div>
+            <div class="item-artist-image"></div>
+            <div class="item-artist">by {{track.artist}}</div>
+            <div class="item-more"></div> 
+        </div>
+    </div>
 </div>
