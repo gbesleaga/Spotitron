@@ -9,15 +9,13 @@ import { CountryChart } from 'src/app/shared/types';
 interface DisplayTrack {
   name: string;
   artist: string;
+
+  audio: HTMLAudioElement | undefined;
   
   stateDisplay: string;
   showState: boolean;
-  
+
   playing: boolean;
-
-  
-
-
 }
 
 
@@ -56,6 +54,7 @@ export class CountryViewComponent implements OnInit {
           const dt = {
             name: this.getDisplayTrackName(t.track),
             artist: this.getDisplayTrackArtist(t.track),
+            audio: this.getDisplayTrackAudio(t.track),
             playing: false,
             stateDisplay: 'play',
             showState: false,
@@ -91,27 +90,53 @@ export class CountryViewComponent implements OnInit {
   }
 
   togglePlay(index: number) {
+    // what to do
+    const play = !this.displayTracks[index].playing;
 
-    this.pauseActiveTrack();
-
-    this.displayTracks[index].playing = !this.displayTracks[index].playing;
-
-    if (this.displayTracks[index].playing) {
-      this.displayTracks[index].stateDisplay = 'pause';
-      this.currentlyPlayingTrackIndex = index;
+    if (this.currentlyPlayingTrackIndex === index) {
+      if (play) {
+        this.playTrack(index);
+      } else {
+        this.pauseTrack(index);
+      }
     } else {
-      this.displayTracks[index].stateDisplay = 'play';
+      this.pauseActiveTrack();
+
+      if (play) {
+        this.playTrack(index);
+      } else {
+        this.pauseTrack(index);
+      }
     }
   }
 
   private pauseActiveTrack() {
     if (this.currentlyPlayingTrackIndex >= 0) {
-      const activeTrack = this.displayTracks[this.currentlyPlayingTrackIndex];
-      activeTrack.playing = false;
-      activeTrack.stateDisplay = 'play';
-      activeTrack.showState = false;
+      this.displayTracks[this.currentlyPlayingTrackIndex].showState = false;
+      this.pauseTrack(this.currentlyPlayingTrackIndex);
     }
   }
+
+  private playTrack(index: number) {
+    const track = this.displayTracks[index];
+
+    track.playing = true;
+    track.stateDisplay = 'pause';
+    track.audio?.play();
+
+    this.currentlyPlayingTrackIndex = index;
+  }
+
+  private pauseTrack(index: number) {
+    const track = this.displayTracks[index];
+
+    track.playing = false;
+    track.stateDisplay = 'play';
+    track.audio?.pause();
+
+    this.currentlyPlayingTrackIndex = -1;
+  }
+
 
   onLeaveView() {
     //this.show = false;
@@ -136,5 +161,15 @@ export class CountryViewComponent implements OnInit {
     artistConcat += track.artists[track.artists.length - 1].name;
 
     return artistConcat;
+  }
+
+  private getDisplayTrackAudio(track: SpotifyTrackObject) {
+    if(track.preview_url) {
+      const audio = new Audio(track.preview_url);
+      audio.loop = true;
+      return audio;
+    }
+
+    return undefined;
   }
 }
