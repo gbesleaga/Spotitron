@@ -9,6 +9,15 @@ import { CountryChart } from 'src/app/shared/types';
 interface DisplayTrack {
   name: string;
   artist: string;
+  
+  stateDisplay: string;
+  showState: boolean;
+  
+  playing: boolean;
+
+  
+
+
 }
 
 
@@ -22,6 +31,8 @@ export class CountryViewComponent implements OnInit {
   show: boolean = false;
   chartName: string = "";
   displayTracks: DisplayTrack[] = [];
+
+  currentlyPlayingTrackIndex: number = -1;
 
   selectedCountrySubscription: Subscription | undefined = undefined;
 
@@ -44,7 +55,10 @@ export class CountryViewComponent implements OnInit {
         for (let t of tracks) {
           const dt = {
             name: this.getDisplayTrackName(t.track),
-            artist: this.getDisplayTrackArtist(t.track)
+            artist: this.getDisplayTrackArtist(t.track),
+            playing: false,
+            stateDisplay: 'play',
+            showState: false,
           }
 
           this.displayTracks.push(dt);
@@ -60,17 +74,48 @@ export class CountryViewComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  onDisplayTrackHover(index: number) {
-    if (index < 0) {
-      console.log("none hovered");
+  onDisplayTrackHoverEnter(index: number) {
+    if (this.displayTracks[index].playing) {
+      this.displayTracks[index].stateDisplay = 'pause';
+    }
+
+    this.displayTracks[index].showState = true;
+  }
+
+  onDisplayTrackHoverLeave(index: number) {
+    if (this.displayTracks[index].playing) {
+      this.displayTracks[index].stateDisplay = 'playing';
     } else {
-      console.log(this.displayTracks[index].name + " hovered");
+      this.displayTracks[index].showState = false;
+    }
+  }
+
+  togglePlay(index: number) {
+
+    this.pauseActiveTrack();
+
+    this.displayTracks[index].playing = !this.displayTracks[index].playing;
+
+    if (this.displayTracks[index].playing) {
+      this.displayTracks[index].stateDisplay = 'pause';
+      this.currentlyPlayingTrackIndex = index;
+    } else {
+      this.displayTracks[index].stateDisplay = 'play';
+    }
+  }
+
+  private pauseActiveTrack() {
+    if (this.currentlyPlayingTrackIndex >= 0) {
+      const activeTrack = this.displayTracks[this.currentlyPlayingTrackIndex];
+      activeTrack.playing = false;
+      activeTrack.stateDisplay = 'play';
+      activeTrack.showState = false;
     }
   }
 
   onLeaveView() {
-    this.show = false;
-    this.countrySelectionService.clearSelection();
+    //this.show = false;
+    //this.countrySelectionService.clearSelection();
   }
 
   private getDisplayTrackName(track: SpotifyTrackObject) {
