@@ -28,6 +28,7 @@
     align-content: center;
     align-items: center;
     overflow:auto;
+    font-size: 45px;
   }
 
   .hcontainer {
@@ -37,12 +38,21 @@
     display: flex;
     flex-direction: row;
     justify-content: space-around;
+    align-items:center;
+  }
+
+  .item-state {
+    width: 15%;
   }
 
   .item-title {
-    width:50%;
+    width:45%;
   }
 
   .item-artist {
-    width:50%;
+    width:40%;
+  }
+
+  .hidden {
+    display: none;
   }

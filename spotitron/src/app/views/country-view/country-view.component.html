@@ -4,8 +4,14 @@
             <h1>{{chartName}}</h1>
         </div>
 
-        <div class="hcontainer"  *ngFor="let track of displayTracks; let i = index" (mouseenter)="onDisplayTrackHover(i)" (mouseleave)="onDisplayTrackHover(-1)">
-            <div class="item-state"></div>
+        <div class="hcontainer"  *ngFor="let track of displayTracks; let i = index" (mouseenter)="onDisplayTrackHoverEnter(i)" (mouseleave)="onDisplayTrackHoverLeave(i)">
+            <div class="item-state">
+                <img 
+                    [ngClass]="((track.showState? '' : 'hidden'))" 
+                    src="/assets/images/buttons/{{track.stateDisplay}}.png" 
+                    width="40" height="40"
+                    (click)="togglePlay(i)">
+            </div>
             <div class="item-title-img"></div>
             <div class="item-title">{{track.name}}</div>
             <div class="item-artist-image"></div>
