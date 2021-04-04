@@ -1,8 +1,15 @@
-import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
+
+export enum MenuItemType {
+  ACTION,
+  PLACEHOLDER
+}
 
 export interface MenuItem {
   id: number;
   text: string;
+  type: MenuItemType;
+  action: () => void;
 }
 
 export interface Menu {
@@ -23,16 +30,18 @@ export interface MenuDisplayer {
 })
 export class ContextMenuComponent implements OnInit, MenuDisplayer {
   @Input() menu: Menu = {top: 0, left: 0, items: [], children: []};
-
-  //@Output() newMenuEvent = new EventEmitter<number>();
   
   constructor() { }
 
   ngOnInit(): void {
   }
 
-  menuAction(id: number, e: MouseEvent) {
+  menuAction(item: MenuItem, e: MouseEvent) {
     e.stopPropagation();
-    console.log(id);
+    //console.log(item.id);
+    
+    if (item.type === MenuItemType.ACTION) {
+      item.action();
+    }
   }
 }

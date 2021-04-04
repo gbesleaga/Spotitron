@@ -1,7 +1,7 @@
 import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { SpotifyPlaylistTrackObject, SpotifyTrackObject } from 'spotify-lib';
-import { ContextMenuComponent, Menu, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
+import { ContextMenuComponent, Menu, MenuDisplayer, MenuItemType } from 'src/app/shared/components/context-menu/context-menu.component';
 import { ContextMenuDirective } from 'src/app/shared/components/context-menu/context-menu.directive';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { CountrySelectionService } from 'src/app/shared/country-selection.service';
@@ -174,15 +174,43 @@ export class CountryViewComponent implements OnInit {
       const children = [];
 
       if (type === 'track') {
-        items.push({id: 0, text: 'Save to your Liked Songs'});
-        items.push({id: 1, text: 'Add to Playlist ...'});
+        items.push({
+          id: 0, 
+          text: 'Save to your Liked Songs', 
+          type: MenuItemType.ACTION,
+          action: () => {
+            console.log("Saved to your Liked Songs");
+          }
+        });
+        items.push({
+          id: 1, 
+          text: 'Add to Playlist ...', 
+          type: MenuItemType.PLACEHOLDER,
+          action: () => {}
+        });
 
+        const test1 = 'test1';
+        const test2 = 'test2';
         const addToPlaylistMenu: Menu = {
           top: -300,
           left: -300,
           items: [
-            {id: 2, text: 'test1'},
-            {id: 3, text: 'test2'}
+            {
+              id: 2,
+              text: test1,
+              type: MenuItemType.ACTION,
+              action: () => {
+                console.log(test1);
+              }
+            },
+            {
+              id: 3,
+              text: test2,
+              type: MenuItemType.ACTION,
+              action: () => {
+                console.log(test2);
+              }
+            },
           ],
           children: []
         }

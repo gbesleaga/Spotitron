@@ -1,5 +1,5 @@
 <div class="context-menu" [style.top.px]="menu.top" [style.left.px]="menu.left">
-    <div *ngFor="let item of menu.items; let i = index" (click)="menuAction(item.id, $event)">
+    <div *ngFor="let item of menu.items; let itemIndex = index" (click)="menuAction(item, $event)">
         <p>{{item.text}}</p>
     </div>
     <div *ngFor="let menu of menu.children">
