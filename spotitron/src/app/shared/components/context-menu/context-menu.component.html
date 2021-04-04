@@ -1,0 +1,8 @@
+<div class="context-menu" [style.top.px]="menu.top" [style.left.px]="menu.left">
+    <div *ngFor="let item of menu.items; let i = index" (click)="menuAction(item.id, $event)">
+        <p>{{item.text}}</p>
+    </div>
+    <div *ngFor="let menu of menu.children">
+        <app-context-menu [menu]="menu"></app-context-menu>
+    </div>
+</div>

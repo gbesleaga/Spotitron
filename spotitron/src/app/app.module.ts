@@ -10,6 +10,8 @@ import { AuthGuardService, AuthService, SpotifyHttpClientService, SpotifyLibModu
 import { HttpClientModule } from '@angular/common/http';
 import { MainViewComponent } from './views/main-view/main-view.component';
 import { CountryViewComponent } from './views/country-view/country-view.component';
+import { ContextMenuComponent } from './shared/components/context-menu/context-menu.component';
+import { ContextMenuDirective } from './shared/components/context-menu/context-menu.directive';
 
 const appRoutes: Routes = [
   {
@@ -37,7 +39,9 @@ const appRoutes: Routes = [
     AuthRedirectComponent,
     AuthCallbackComponent,
     MainViewComponent,
-    CountryViewComponent
+    CountryViewComponent,
+    ContextMenuComponent,
+    ContextMenuDirective
   ],
   imports: [
     BrowserModule,

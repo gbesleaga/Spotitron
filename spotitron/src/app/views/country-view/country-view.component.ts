@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { SpotifyPlaylistTrackObject, SpotifyTrackObject } from 'spotify-lib';
+import { ContextMenuComponent, Menu, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
+import { ContextMenuDirective } from 'src/app/shared/components/context-menu/context-menu.directive';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { CountrySelectionService } from 'src/app/shared/country-selection.service';
 import { CountryChart } from 'src/app/shared/types';
@@ -34,40 +36,44 @@ export class CountryViewComponent implements OnInit {
 
   selectedCountrySubscription: Subscription | undefined = undefined;
 
-  private countryChart: CountryChart | undefined;
+  countryChart: CountryChart | undefined;
+
+  // more-menu
+  showMenu = false;
+  menuType: 'track' | 'chart' | undefined = undefined;
+
+  @ViewChild(ContextMenuDirective, {static: true}) contextMenuHost: ContextMenuDirective | undefined;
 
   constructor(
     private countrySelectionService: CountrySelectionService,
-    private countryDataService: CountryDataService) {
+    private countryDataService: CountryDataService,
+    private componentFactoryResolver: ComponentFactoryResolver) {
       this.countrySelectionService.getSelectedCountry().subscribe( country => {
+        this.countryChart = this.countryDataService.getChartDataForCountry(country);
       
-      this.countryChart = this.countryDataService.getChartDataForCountry(country);
-      
-      if (this.countryChart) {
-        this.show = true;
-        this.chartName = this.countryChart.name;
+        if (this.countryChart) {
+          this.show = true;
+          this.chartName = this.countryChart.name;
 
-        this.displayTracks = [];
-        const tracks: SpotifyPlaylistTrackObject[] = this.countryChart.tracks.items as SpotifyPlaylistTrackObject[];
+          this.displayTracks = [];
+          const tracks: SpotifyPlaylistTrackObject[] = this.countryChart.tracks.items as SpotifyPlaylistTrackObject[];
 
-        for (let t of tracks) {
-          const dt = {
-            name: this.getDisplayTrackName(t.track),
-            artist: this.getDisplayTrackArtist(t.track),
-            audio: this.getDisplayTrackAudio(t.track),
-            playing: false,
-            stateDisplay: 'play',
-            showState: false,
+          for (let t of tracks) {
+            const dt = {
+              name: this.getDisplayTrackName(t.track),
+              artist: this.getDisplayTrackArtist(t.track),
+              audio: this.getDisplayTrackAudio(t.track),
+              playing: false,
+              stateDisplay: 'play',
+              showState: false,
+            }
+
+            this.displayTracks.push(dt);
           }
-
-          this.displayTracks.push(dt);
+        } else {
+          this.onLeaveView();
         }
-
-      } else {
-        this.onLeaveView();
-      }
-
-    });
+      });
   }
 
   ngOnInit(): void {
@@ -137,6 +143,69 @@ export class CountryViewComponent implements OnInit {
     this.currentlyPlayingTrackIndex = -1;
   }
 
+  toggleTrackMoreMenu(index: number, e: MouseEvent) {
+    this.showMenu = !this.showMenu;
+
+    if (this.showMenu) {
+      this.prepareMoreMenu('track', e.pageY + 20, e.pageX);
+    }
+  }
+
+  //TODO do this once and then swap? might need another child to hold everything
+  private prepareMoreMenu(type: 'track' | 'chart', posTop: number, posLeft: number) {
+    //if (this.menuType === type) {
+    //  return;
+    //}
+
+    const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
+
+    if (!this.contextMenuHost) {
+      console.log('cant find placeholder');
+      return;
+    }
+
+    const viewContainerRef = this.contextMenuHost.viewContainerRef;
+    viewContainerRef.clear();
+
+    const componentRef = viewContainerRef?.createComponent<MenuDisplayer>(componentFactory);
+
+    if (componentRef) {
+      const items = [];
+      const children = [];
+
+      if (type === 'track') {
+        items.push({id: 0, text: 'Save to your Liked Songs'});
+        items.push({id: 1, text: 'Add to Playlist ...'});
+
+        const addToPlaylistMenu: Menu = {
+          top: -300,
+          left: -300,
+          items: [
+            {id: 2, text: 'test1'},
+            {id: 3, text: 'test2'}
+          ],
+          children: []
+        }
+
+        children.push(addToPlaylistMenu);
+      } else {
+        //items.push('Save to Your Library');
+      }
+
+      componentRef.instance.menu.items = items;
+      componentRef.instance.menu.children = children;
+
+      componentRef.instance.menu.top = posTop;
+      componentRef.instance.menu.left = posLeft;
+    }
+
+
+    this.menuType = type;
+  }
+
+  closeMoreMenu() {
+    this.showMenu = false;
+  }
 
   onLeaveView() {
     //this.show = false;
