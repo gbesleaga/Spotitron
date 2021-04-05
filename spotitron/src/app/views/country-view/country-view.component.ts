@@ -1,7 +1,7 @@
 import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { SpotifyPlaylistTrackObject, SpotifyTrackObject } from 'spotify-lib';
-import { ContextMenuComponent, Menu, MenuDisplayer, MenuItemType } from 'src/app/shared/components/context-menu/context-menu.component';
+import { ContextMenuComponent, Menu, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
 import { ContextMenuDirective } from 'src/app/shared/components/context-menu/context-menu.directive';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { CountrySelectionService } from 'src/app/shared/country-selection.service';
@@ -177,28 +177,26 @@ export class CountryViewComponent implements OnInit {
         items.push({
           id: 0, 
           text: 'Save to your Liked Songs', 
-          type: MenuItemType.ACTION,
           action: () => {
             console.log("Saved to your Liked Songs");
           }
         });
         items.push({
           id: 1, 
-          text: 'Add to Playlist ...', 
-          type: MenuItemType.PLACEHOLDER,
-          action: () => {}
+          text: 'Add to Playlist ...',
+          submenuIndex: 0
         });
 
         const test1 = 'test1';
         const test2 = 'test2';
-        const addToPlaylistMenu: Menu = {
-          top: -300,
-          left: -300,
+        const addToPlaylistMenu = {
+          show: false,
+          top: 25,
+          left: -200,
           items: [
             {
               id: 2,
               text: test1,
-              type: MenuItemType.ACTION,
               action: () => {
                 console.log(test1);
               }
@@ -206,7 +204,6 @@ export class CountryViewComponent implements OnInit {
             {
               id: 3,
               text: test2,
-              type: MenuItemType.ACTION,
               action: () => {
                 console.log(test2);
               }
@@ -223,6 +220,7 @@ export class CountryViewComponent implements OnInit {
       componentRef.instance.menu.items = items;
       componentRef.instance.menu.children = children;
 
+      componentRef.instance.menu.show = true;
       componentRef.instance.menu.top = posTop;
       componentRef.instance.menu.left = posLeft;
     }
