@@ -1,5 +1,5 @@
 <div [ngClass]="('overlay ' + (show? 'on' : 'off'))" (click)="onLeaveView()">
-    <div [ngClass]="((showMenu? '' : 'hidden'))"  id="more-menu-overlay" (click)="closeMoreMenu()">
+    <div [ngClass]="((showMenu? '' : 'hidden'))"  id="more-menu-overlay" (click)="closeMoreMenu($event)">
         <ng-template contextMenuHost></ng-template>
     </div>
 
@@ -14,7 +14,7 @@
                     [ngClass]="((track.showState? '' : 'hidden'))" 
                     src="/assets/images/buttons/{{track.stateDisplay}}.png" 
                     width="40" height="40"
-                    (click)="togglePlay(i)">
+                    (click)="togglePlay(i, $event)">
             </div>
             <div class="item-title-img"></div>
             <div class="item-title">{{track.name}}</div>

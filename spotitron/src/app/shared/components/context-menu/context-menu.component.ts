@@ -1,7 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 
 export interface MenuItem {
-  id: number;
   text: string;
 }
 

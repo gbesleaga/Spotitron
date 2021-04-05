@@ -1,7 +1,7 @@
 import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { SpotifyPlaylistTrackObject, SpotifyTrackObject } from 'spotify-lib';
-import { ContextMenuComponent, Menu, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
+import { forkJoin, Subscription } from 'rxjs';
+import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject, SpotifySimplifiedPlaylistObject, SpotifyTrackObject } from 'spotify-lib';
+import { ContextMenuComponent, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
 import { ContextMenuDirective } from 'src/app/shared/components/context-menu/context-menu.directive';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { CountrySelectionService } from 'src/app/shared/country-selection.service';
@@ -38,16 +38,18 @@ export class CountryViewComponent implements OnInit {
 
   countryChart: CountryChart | undefined;
 
-  // more-menu
+  // context-menu
   showMenu = false;
-  menuType: 'track' | 'chart' | undefined = undefined;
+  playlistsOfCurrentUser: SpotifySimplifiedPlaylistObject[] = [];
 
   @ViewChild(ContextMenuDirective, {static: true}) contextMenuHost: ContextMenuDirective | undefined;
 
   constructor(
     private countrySelectionService: CountrySelectionService,
     private countryDataService: CountryDataService,
-    private componentFactoryResolver: ComponentFactoryResolver) {
+    private componentFactoryResolver: ComponentFactoryResolver,
+    private spotifyService: SpotifyHttpClientService,
+    private authService: AuthService) {
       this.countrySelectionService.getSelectedCountry().subscribe( country => {
         this.countryChart = this.countryDataService.getChartDataForCountry(country);
       
@@ -74,6 +76,26 @@ export class CountryViewComponent implements OnInit {
           this.onLeaveView();
         }
       });
+
+      // get playlists that current user owns
+      forkJoin({
+        userId: this.spotifyService.getUserId({ accessToken: this.authService.getAccessToken() }),
+        userPlaylists: this.spotifyService.getPlaylistsOfCurrentUser({ accessToken: this.authService.getAccessToken() })
+      })
+      .subscribe( 
+        response => {
+          let userId = response.userId.id;
+          let playlists = response.userPlaylists.items as SpotifySimplifiedPlaylistObject[];
+
+          for (let p of playlists) {
+            if (p.owner.id === userId) {
+              this.playlistsOfCurrentUser.push(p);
+            }
+          }
+        },
+        err => {
+          console.log(err);
+        });
   }
 
   ngOnInit(): void {
@@ -95,7 +117,9 @@ export class CountryViewComponent implements OnInit {
     }
   }
 
-  togglePlay(index: number) {
+  togglePlay(index: number, e: MouseEvent) {
+    e.stopPropagation();
+
     // what to do
     const play = !this.displayTracks[index].playing;
 
@@ -144,18 +168,17 @@ export class CountryViewComponent implements OnInit {
   }
 
   toggleTrackMoreMenu(index: number, e: MouseEvent) {
+    e.stopPropagation();
+
     this.showMenu = !this.showMenu;
 
     if (this.showMenu) {
-      this.prepareMoreMenu('track', e.pageY + 20, e.pageX);
+      this.prepareTrackMenu(index, e.pageY + 20, e.pageX);
     }
   }
 
   //TODO do this once and then swap? might need another child to hold everything
-  private prepareMoreMenu(type: 'track' | 'chart', posTop: number, posLeft: number) {
-    //if (this.menuType === type) {
-    //  return;
-    //}
+  private prepareTrackMenu(trackIndex: number, posTop: number, posLeft: number) {
 
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
 
@@ -169,73 +192,79 @@ export class CountryViewComponent implements OnInit {
 
     const componentRef = viewContainerRef?.createComponent<MenuDisplayer>(componentFactory);
 
-    if (componentRef) {
-      const items = [];
-      const children = [];
-
-      if (type === 'track') {
-        items.push({
-          id: 0, 
-          text: 'Save to your Liked Songs', 
-          action: () => {
-            console.log("Saved to your Liked Songs");
-          }
-        });
-        items.push({
-          id: 1, 
-          text: 'Add to Playlist ...',
-          submenuIndex: 0
-        });
-
-        const test1 = 'test1';
-        const test2 = 'test2';
-        const addToPlaylistMenu = {
-          show: false,
-          top: 25,
-          left: -200,
-          items: [
-            {
-              id: 2,
-              text: test1,
-              action: () => {
-                console.log(test1);
-              }
-            },
-            {
-              id: 3,
-              text: test2,
-              action: () => {
-                console.log(test2);
-              }
-            },
-          ],
-          children: []
-        }
-
-        children.push(addToPlaylistMenu);
-      } else {
-        //items.push('Save to Your Library');
-      }
-
-      componentRef.instance.menu.items = items;
-      componentRef.instance.menu.children = children;
-
-      componentRef.instance.menu.show = true;
-      componentRef.instance.menu.top = posTop;
-      componentRef.instance.menu.left = posLeft;
+    if (!componentRef) {
+      return;
     }
 
+    const items = [];
+    const children = [];
 
-    this.menuType = type;
+    items.push({
+      text: 'Save to your Liked Songs', 
+      action: () => {
+        console.log("Saved to your Liked Songs");
+      }
+    });
+
+    items.push({
+      text: 'Add to Playlist ...',
+      submenuIndex: 0
+    });
+
+    const playlistMenuItems = [];
+
+    for (let p of this.playlistsOfCurrentUser) {
+      playlistMenuItems.push({
+        text: p.name,
+        action: () => {
+          //console.log(p.name);
+          const trackId = (this.countryChart?.tracks.items[trackIndex] as SpotifyPlaylistTrackObject).track.id;
+
+          //TODO duplicates?
+          this.spotifyService.addTracksToPlaylist({
+            accessToken: this.authService.getAccessToken(),
+            playlistId: p.id,
+            trackIds: [trackId]
+          }).subscribe(
+            () => {
+              console.log("Track added to " + p.name);
+            },
+            err => {
+              console.log("Failed to add track to " + p.name + " : ");
+              console.log(err);
+            }
+          );
+        }
+      });
+    }
+
+    const addToPlaylistMenu = {
+      show: false,
+      top: 25,
+      left: -200,
+      items: playlistMenuItems,
+      children: []
+    }
+
+    children.push(addToPlaylistMenu);
+
+    componentRef.instance.menu.items = items;
+    componentRef.instance.menu.children = children;
+
+    componentRef.instance.menu.show = true;
+    componentRef.instance.menu.top = posTop;
+    componentRef.instance.menu.left = posLeft;
   }
 
-  closeMoreMenu() {
+  closeMoreMenu(e: MouseEvent) {
+    e.stopPropagation();
+
     this.showMenu = false;
   }
 
   onLeaveView() {
-    //this.show = false;
-    //this.countrySelectionService.clearSelection();
+    this.show = false;
+    this.countrySelectionService.clearSelection();
   }
 
   private getDisplayTrackName(track: SpotifyTrackObject) {
