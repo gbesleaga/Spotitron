@@ -1,4 +1,8 @@
 <div [ngClass]="('overlay ' + (show? 'on' : 'off'))" (click)="onLeaveView()">
+    <div [ngClass]="((showMenu? '' : 'hidden'))"  id="more-menu-overlay" (click)="closeMoreMenu($event)">
+        <ng-template contextMenuHost></ng-template>
+    </div>
+
     <div class="vcontainer">
         <div>
             <h1>{{chartName}}</h1>
@@ -10,13 +14,19 @@
                     [ngClass]="((track.showState? '' : 'hidden'))" 
                     src="/assets/images/buttons/{{track.stateDisplay}}.png" 
                     width="40" height="40"
-                    (click)="togglePlay(i)">
+                    (click)="togglePlay(i, $event)">
             </div>
             <div class="item-title-img"></div>
             <div class="item-title">{{track.name}}</div>
             <div class="item-artist-image"></div>
             <div class="item-artist">by {{track.artist}}</div>
-            <div class="item-more"></div> 
+            <div class="item-more">
+                <img 
+                [ngClass]="((track.showState? '' : 'hidden'))" 
+                src="/assets/images/buttons/more.png" 
+                width="40" height="40"
+                (click)="toggleTrackMoreMenu(i, $event)">
+            </div> 
         </div>
     </div>
 </div>
