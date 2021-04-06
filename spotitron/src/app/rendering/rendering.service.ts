@@ -103,7 +103,10 @@ export class RenderingService {
         this.renderer.setSize( window.innerWidth, window.innerHeight);
         this.renderer.setClearColor(0xff0000);
 
-        document.body.appendChild( this.renderer.domElement );
+        const canvasPlaceholder = document.getElementById('canvas-placeholder');
+        if (canvasPlaceholder) {
+            canvasPlaceholder.appendChild(this.renderer.domElement);
+        }
     
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
         this.controls.enableZoom = false;

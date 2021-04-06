@@ -1,0 +1,10 @@
+#canvas-placeholder {
+    width: 100%;
+    height: 100%;
+}
+
+.logout {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+}

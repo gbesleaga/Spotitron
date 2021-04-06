@@ -1,6 +1,8 @@
 import { AfterViewInit, OnDestroy } from '@angular/core';
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { AuthService } from 'spotify-lib';
 
 import { AnimationService } from 'src/app/rendering/animation.service';
 import { RenderingService } from 'src/app/rendering/rendering.service';
@@ -20,7 +22,9 @@ export class MainViewComponent implements AfterViewInit, OnDestroy {
   constructor(
     private countryDataService: CountryDataService,
     private renderingService: RenderingService,
-    private animationService: AnimationService) {
+    private animationService: AnimationService,
+    private authService: AuthService,
+    private router: Router) {
     }
 
   ngAfterViewInit(){
@@ -30,6 +34,11 @@ export class MainViewComponent implements AfterViewInit, OnDestroy {
       this.renderingService.init(charts);
       this.animationService.animate();
     })
+  }
+
+  onLogout() {
+    this.authService.logout();
+    this.router.navigate(['']);
   }
 
   ngOnDestroy() {
