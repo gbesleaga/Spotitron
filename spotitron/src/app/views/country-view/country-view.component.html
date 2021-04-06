@@ -4,11 +4,23 @@
     </div>
 
     <div class="vcontainer">
-        <div>
+        <div class="hcontainer chart-title" (pointerenter)="onChartTitleHoverEnter()" (pointerleave)="onChartTitleHoverLeave()">
+            <div class="item-state">
+                <p [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" >
+                    F: {{displayChartTitle.following}}
+                </p>
+            </div>
             <h1>{{chartName}}</h1>
+            <div class="item-more">
+                <img 
+                [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" 
+                src="/assets/images/buttons/more.png" 
+                width="40" height="40"
+                (click)="openChartMoreMenu($event)">
+            </div> 
         </div>
 
-        <div class="hcontainer"  *ngFor="let track of displayTracks; let i = index" (mouseenter)="onDisplayTrackHoverEnter(i)" (mouseleave)="onDisplayTrackHoverLeave(i)">
+        <div class="hcontainer chart-tracks"  *ngFor="let track of displayTracks; let i = index" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
             <div class="item-state">
                 <img 
                     [ngClass]="((track.showState? '' : 'hidden'))" 
@@ -25,7 +37,7 @@
                 [ngClass]="((track.showState? '' : 'hidden'))" 
                 src="/assets/images/buttons/more.png" 
                 width="40" height="40"
-                (click)="toggleTrackMoreMenu(i, $event)">
+                (click)="openTrackMoreMenu(i, $event)">
             </div> 
         </div>
     </div>

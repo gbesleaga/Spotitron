@@ -50,7 +50,7 @@ const appRoutes: Routes = [
     SpotifyLibModule.forRoot({
       redirectURI: environment.spotifyAuthRedirectURI,
       clientId: '40bdabd3ffb14520bebc8e90e97c0c77',
-      clientScope: 'playlist-read-private streaming user-read-email user-read-private user-top-read playlist-modify-public',
+      clientScope: 'playlist-read-private streaming user-read-email user-read-private user-top-read playlist-modify-public playlist-modify-private',
       storageKeyForCodeVerifier: 'STRON_codeVerifier',
       storageKeyForAuthToken: 'STRON_authToken',
       storageKeyForAuthTokenValidUntil: 'STRON_authTokenValidUntil',
