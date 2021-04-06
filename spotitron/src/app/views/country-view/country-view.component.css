@@ -45,12 +45,20 @@
 
   .hcontainer {
     width: 80%;
-    background-color: red;
-    border: 1px solid black;
     display: flex;
     flex-direction: row;
     justify-content: space-around;
     align-items:center;
+  }
+
+  .hcontainer.chart-title {
+    background-color: blue;
+    border: 1px solid black;
+  }
+
+  .hcontainer.chart-tracks {
+    background-color: red;
+    border: 1px solid black;
   }
 
   .item-state {
