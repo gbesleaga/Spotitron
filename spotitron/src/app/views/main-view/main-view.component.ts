@@ -31,8 +31,7 @@ export class MainViewComponent implements AfterViewInit, OnDestroy {
     // TODO will be moved; should we group these 2 calls into 1? 
     this.countryDataService.fetchChartData();
     this.countryDataService.getChartData().subscribe(charts => {
-      this.renderingService.init(charts);
-      this.animationService.animate();
+      this.renderingService.initGlobe(charts);
     })
   }
 

@@ -94,8 +94,8 @@ export class RenderingService {
 
     private countryAnimations: Map<string, Animation> = new Map();
 
-
-    public init(charts: Map<string, CountryChart>) {
+    public init()
+    {
         this.camera.position.copy(this.cameraInitialPosition);
         this.camera.lookAt(this.scene.position);
         this.scene.add(this.camera);
@@ -107,7 +107,30 @@ export class RenderingService {
         if (canvasPlaceholder) {
             canvasPlaceholder.appendChild(this.renderer.domElement);
         }
-    
+
+        // render passes
+        this.composer = new EffectComposer(this.renderer);
+
+        const renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(renderPass);
+
+        this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
+        this.composer.addPass(this.outlinePass);
+
+        this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {
+            this.outlinePass!.patternTexture = texture;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+        });
+
+        this.effectFXAA = new ShaderPass(new FXAAShader());
+        this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+        this.composer.addPass(this.effectFXAA);
+
+        this.resize();
+    }
+
+    public initGlobe(charts: Map<string, CountryChart>) {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
         this.controls.enableZoom = false;
 
@@ -237,25 +260,6 @@ export class RenderingService {
             i++;
         }
 
-        // postprocessing
-        this.composer = new EffectComposer(this.renderer);
-
-        const renderPass = new RenderPass(this.scene, this.camera);
-        this.composer.addPass(renderPass);
-
-        this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
-        this.composer.addPass(this.outlinePass);
-
-        this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {
-            this.outlinePass!.patternTexture = texture;
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-        });
-
-        this.effectFXAA = new ShaderPass(new FXAAShader());
-        this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-        this.composer.addPass(this.effectFXAA);
-
         // event listening
         this.renderer.domElement.addEventListener('pointerdown', (e) => this.onMouseDown(e));
         this.renderer.domElement.addEventListener('pointermove', (e) => this.onMouseMove(e));
@@ -263,8 +267,6 @@ export class RenderingService {
         this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
 
         window.addEventListener('resize', () => this.resize(), false);
-
-        this.resize();
     }
 
     public render() {
