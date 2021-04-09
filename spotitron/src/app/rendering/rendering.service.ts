@@ -14,7 +14,7 @@ import { EffectComposer } from './postprocessing/effect-composer';
 import { FXAAShader } from './postprocessing/fxaa-shader';
 import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
-import { ShaderPass } from './postprocessing/shared-pass';
+import { ShaderPass } from './postprocessing/shader-pass';
 
 interface Animation {
     mixer: AnimationMixer;

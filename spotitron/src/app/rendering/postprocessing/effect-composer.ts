@@ -9,7 +9,7 @@ import {
 
 import { CopyShader } from './copy-shader';
 import { Pass } from './pass';
-import { ShaderPass } from './shared-pass';
+import { ShaderPass } from './shader-pass';
 
 
 export class EffectComposer {
