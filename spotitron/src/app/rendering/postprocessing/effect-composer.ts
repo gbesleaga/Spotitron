@@ -7,7 +7,7 @@ import {
 	WebGLRenderTarget
 } from 'three';
 
-import { CopyShader } from './copy-shader';
+import { CopyShader } from '../shaders/copy-shader';
 import { Pass } from './pass';
 import { ShaderPass } from './shader-pass';
 

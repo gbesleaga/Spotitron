@@ -11,7 +11,7 @@ import { CountryChart, Position2D } from '../shared/types';
 
 import { Map3DGeometry } from './geometry/Map3DGeometry';
 import { EffectComposer } from './postprocessing/effect-composer';
-import { FXAAShader } from './postprocessing/fxaa-shader';
+import { FXAAShader } from './shaders/fxaa-shader';
 import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shader-pass';
