@@ -8,7 +8,24 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-  <script type="x-shader" id="sem-vs">
+  <script type="x-shader" id="starfield-vs">
+    varying vec2 vUV;
+        
+    void main() {
+      vUV = uv;
+      gl_Position = vec4(position, 1.0);
+    }
+  </script>
+
+  <script type="x-shader" id="starfield-fs">
+		varying vec2 vUV;
+
+		void main() {
+		  gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+		}
+  </script>
+
+  <script type="x-shader" id="country-vs">
     varying vec2 vUV;
     void main() {
         vUV = uv;
@@ -18,7 +35,7 @@
     }
   </script>
     
-  <script type="x-shader" id="sem-fs">
+  <script type="x-shader" id="country-fs">
     uniform sampler2D tMatCap;
     varying vec2 vUV;
     

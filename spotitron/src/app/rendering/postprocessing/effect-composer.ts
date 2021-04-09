@@ -62,11 +62,11 @@ export class EffectComposer {
         this.writeBuffer = this.renderTarget1;
         this.readBuffer = this.renderTarget2;
 
-        this.copyPass = new ShaderPass(new CopyShader, undefined);
+        this.copyPass = new ShaderPass(new CopyShader);
     }
 
     swapBuffers() {
-		var tmp = this.readBuffer;
+		let tmp = this.readBuffer;
 		this.readBuffer = this.writeBuffer;
 		this.writeBuffer = tmp;
 	}
@@ -84,8 +84,8 @@ export class EffectComposer {
 	removePass(pass: Pass) {
 		const index = this.passes.indexOf(pass);
 
-		if ( index !== - 1 ) {
-			this.passes.splice( index, 1 );
+		if (index !== - 1) {
+			this.passes.splice(index, 1);
 		}
 	}
 
@@ -101,7 +101,7 @@ export class EffectComposer {
 
     // deltaTime value is in seconds
 	render (deltaTime?: number) {
-		if ( deltaTime === undefined ) {
+		if (deltaTime === undefined) {
 			deltaTime = this.clock.getDelta();
 		}
 
@@ -130,7 +130,7 @@ export class EffectComposer {
 					//context.stencilFunc( context.NOTEQUAL, 1, 0xffffffff );
 					stencil.setFunc(context.NOTEQUAL, 1, 0xffffffff);
 
-					this.copyPass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime, false);
+					this.copyPass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime);
 
 					//context.stencilFunc( context.EQUAL, 1, 0xffffffff );
 					stencil.setFunc(context.EQUAL, 1, 0xffffffff);
@@ -168,8 +168,8 @@ export class EffectComposer {
 		this._width = width;
 		this._height = height;
 
-		var effectiveWidth = this._width * this._pixelRatio;
-		var effectiveHeight = this._height * this._pixelRatio;
+		const effectiveWidth = this._width * this._pixelRatio;
+		const effectiveHeight = this._height * this._pixelRatio;
 
 		this.renderTarget1.setSize(effectiveWidth, effectiveHeight);
 		this.renderTarget2.setSize(effectiveWidth, effectiveHeight);

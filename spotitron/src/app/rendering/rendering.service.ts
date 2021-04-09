@@ -15,6 +15,7 @@ import { FXAAShader } from './shaders/fxaa-shader';
 import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shader-pass';
+import { ClearPass } from './postprocessing/clear-pass';
 
 interface Animation {
     mixer: AnimationMixer;
@@ -41,6 +42,7 @@ export class RenderingService {
     onCountrySelectedCallback: (() => void) | undefined = undefined;
 
     private scene: THREE.Scene = new THREE.Scene();
+    private sceneStarfield: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private controls: OrbitControls | undefined = undefined;
     // TODO add renderer to main view component
@@ -100,18 +102,42 @@ export class RenderingService {
         this.camera.lookAt(this.scene.position);
         this.scene.add(this.camera);
 
-        this.renderer.setSize( window.innerWidth, window.innerHeight);
-        this.renderer.setClearColor(0xff0000);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        //this.renderer.setClearColor(0xff0000, 0);
 
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         if (canvasPlaceholder) {
             canvasPlaceholder.appendChild(this.renderer.domElement);
         }
 
+        // starfield
+        const starfieldVS = document.getElementById('starfield-vs')?.textContent;
+        const starfieldFS = document.getElementById('starfield-fs')?.textContent;
+
+        let starfieldQuad = new THREE.Mesh(
+            new THREE.PlaneGeometry(2, 2),
+            new THREE.ShaderMaterial({
+              vertexShader: starfieldVS?starfieldVS:undefined,
+              fragmentShader: starfieldFS?starfieldFS:undefined, 
+              depthWrite: false,
+              depthTest: false
+            })
+        );
+
+        this.sceneStarfield.add(starfieldQuad);
+
         // render passes
         this.composer = new EffectComposer(this.renderer);
 
+        const clearPass = new ClearPass(0xff0000, 1.0);
+        this.composer.addPass( clearPass );
+
+        const starfieldPass = new RenderPass(this.sceneStarfield, this.camera);
+        starfieldPass.clear = false;
+        this.composer.addPass(starfieldPass);
+
         const renderPass = new RenderPass(this.scene, this.camera);
+        renderPass.clear = false;
         this.composer.addPass(renderPass);
 
         this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
@@ -126,6 +152,9 @@ export class RenderingService {
         this.effectFXAA = new ShaderPass(new FXAAShader());
         this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
         this.composer.addPass(this.effectFXAA);
+
+        //const copyPass = new ShaderPass(new CopyShader);
+        //this.composer.addPass(copyPass);
 
         this.resize();
     }
@@ -146,8 +175,8 @@ export class RenderingService {
 
         //this.textureLoader.setCrossOrigin('*');
 
-        const vs = document.getElementById( "sem-vs" )?.textContent;
-        const fs = document.getElementById( "sem-fs" )?.textContent;
+        const vs = document.getElementById("country-vs")?.textContent;
+        const fs = document.getElementById("country-fs")?.textContent;
 
         //console.log(vs);
 
