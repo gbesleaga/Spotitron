@@ -43,6 +43,7 @@ export class RenderingService {
 
     private scene: THREE.Scene = new THREE.Scene();
     private sceneStarfield: THREE.Scene = new THREE.Scene();
+    private starfieldQuad: THREE.Mesh | undefined;
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private controls: OrbitControls | undefined = undefined;
     // TODO add renderer to main view component
@@ -114,9 +115,13 @@ export class RenderingService {
         const starfieldVS = document.getElementById('starfield-vs')?.textContent;
         const starfieldFS = document.getElementById('starfield-fs')?.textContent;
 
-        let starfieldQuad = new THREE.Mesh(
+        this.starfieldQuad = new THREE.Mesh(
             new THREE.PlaneGeometry(2, 2),
             new THREE.ShaderMaterial({
+              uniforms: {
+                  iTime: { value: 0.0 },
+                  iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)}
+              },
               vertexShader: starfieldVS?starfieldVS:undefined,
               fragmentShader: starfieldFS?starfieldFS:undefined, 
               depthWrite: false,
@@ -124,7 +129,7 @@ export class RenderingService {
             })
         );
 
-        this.sceneStarfield.add(starfieldQuad);
+        this.sceneStarfield.add(this.starfieldQuad);
 
         // render passes
         this.composer = new EffectComposer(this.renderer);
@@ -299,7 +304,11 @@ export class RenderingService {
     }
 
     public render() {
-        this.composer?.render();
+        //starfield
+        //if (this.starfieldQuad) {
+        //    const material = this.starfieldQuad.material as THREE.ShaderMaterial;
+        //    material.uniforms['iTime'] = new THREE.Uniform(this.clock.getElapsedTime());
+        //}
 
         //animations
         const delta = this.clock.getDelta();
@@ -311,6 +320,8 @@ export class RenderingService {
         if (this.cameraAnimating) {
             this.camera.lookAt(0,0,0); // keep camera looking at center
         }
+
+        this.composer?.render();
     };
 
     public resize() {
