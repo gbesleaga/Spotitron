@@ -18,11 +18,12 @@
   </script>
 
   <script type="x-shader" id="starfield-fs">
-		#define NUM_LAYERS 10.
-    #define BRIGHTNESS .01
+    // TODO make adjustable and tweak for performance
+		#define NUM_LAYERS 9.
+    #define BRIGHTNESS .02
 
     uniform vec2 iResolution; // viewport resolution (pixels)
-    uniform float iTime; // shader playback time (sec)
+    uniform float iSpeed; // time * factor
 
     varying vec2 vUV;
 
@@ -80,7 +81,7 @@
           float starSize = fract(n * 345.32);
           
           // flare
-          float flare = smoothstep(.9, 1., starSize)* 0.1;
+          float flare = smoothstep(.9, 1., starSize)* 0.02;
           
           float star = Star(gv - offs - (vec2(n, fract(n * 34.)) - .5), flare);
           
@@ -95,9 +96,6 @@
         }
       }
       
-      //col.rg = gv;
-      //if (gv.x > .48 || gv.y > .48) col.r = 1.;
-      
       return col;
     }
 
@@ -107,10 +105,12 @@
       uv *= .5;
 
       // this controls the speed
-      float t = iTime * 0.02; // no globe speed
+      //float t = iTime * 0.02; // no globe speed
       //float t = iTime; // loading
       //float t = 1.8; //static;
-      
+
+      float t = iSpeed;
+
       uv *= Rot(t);
       
       vec3 col = vec3(0);
@@ -121,9 +121,11 @@
         float scale = mix(20., .5, depth);
         float fade = depth * smoothstep(1., .9, depth);
         
-        float layerOffset = 432.21;
+        float layerOffset = 4352.256;
         col += StarLayer(uv * scale + i * layerOffset) * fade;
       }
+
+      col = pow(col, vec3(.4545));	// gamma correction
 
       gl_FragColor = vec4(col,1.0);
 		}

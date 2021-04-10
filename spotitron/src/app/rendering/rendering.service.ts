@@ -41,9 +41,12 @@ export class RenderingService {
 
     onCountrySelectedCallback: (() => void) | undefined = undefined;
 
-    private scene: THREE.Scene = new THREE.Scene();
     private sceneStarfield: THREE.Scene = new THREE.Scene();
     private starfieldQuad: THREE.Mesh | undefined;
+    private starfieldSpeedFactor = 0.; //0.02;
+    private starfieldSpeedUniform = new THREE.Uniform(0.0);
+
+    private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private controls: OrbitControls | undefined = undefined;
     // TODO add renderer to main view component
@@ -119,7 +122,7 @@ export class RenderingService {
             new THREE.PlaneGeometry(2, 2),
             new THREE.ShaderMaterial({
               uniforms: {
-                  iTime: { value: 0.0 },
+                  iSpeed: { value: 0.0 },
                   iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)}
               },
               vertexShader: starfieldVS?starfieldVS:undefined,
@@ -175,7 +178,7 @@ export class RenderingService {
 
 
         let radius =  0.995;
-        let geometry = new THREE.SphereGeometry(radius, 30, 15);
+        let geometry = new THREE.SphereGeometry(radius, 90, 45);
         let material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 
         //this.textureLoader.setCrossOrigin('*');
@@ -305,10 +308,13 @@ export class RenderingService {
 
     public render() {
         //starfield
-        //if (this.starfieldQuad) {
-        //    const material = this.starfieldQuad.material as THREE.ShaderMaterial;
-        //    material.uniforms['iTime'] = new THREE.Uniform(this.clock.getElapsedTime());
-        //}
+        if (this.starfieldQuad) {
+            const material = this.starfieldQuad.material as THREE.ShaderMaterial;
+
+            const t = this.clock.getElapsedTime();
+            this.starfieldSpeedUniform.value = this.starfieldSpeedFactor * t;
+            material.uniforms['iSpeed'] = this.starfieldSpeedUniform; 
+        }
 
         //animations
         const delta = this.clock.getDelta();
