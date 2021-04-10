@@ -66,7 +66,9 @@ export class CountryDataService {
               }
             }
           }
-          this.fetchNextCountry(at + step, stop);
+          setTimeout(() => {
+            this.fetchNextCountry(at + step, stop);
+          }, 100);
         },
         err => {
           console.log("An error occured: " + err);

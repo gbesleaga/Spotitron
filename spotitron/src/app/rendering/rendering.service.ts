@@ -23,9 +23,7 @@ interface Animation {
     reverseAction: AnimationAction | undefined;
 }
 
-const GLOBE_FAR_AWAY_SCALE = 0.0;
-const GLOBE_FINAL_SCALE = 250.0;
-const GLOBE_STEP_SCALE = 100.0;
+const GLOBE_SCALE = 250.0;
 const COUNTRY_EXTRUDE_SCALE = 1.3;
 
 // starfield
@@ -36,11 +34,11 @@ export enum StarfieldState {
 };
 
 const HALT_SPEED = 0.0;
+const ROTATIONAL_HALT_SPEED = 0.005;
 const CRUISE_SPEED = 0.02;
-const HYPER_SPEED = 1.0;
+const HYPER_SPEED = 10;
 
-const ACCELERATION = 10;
-const DECELERATION = 10;
+const ACCELERATION = 0.5;
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
@@ -63,7 +61,8 @@ export class RenderingService {
     private starfieldState = StarfieldState.Cruise;
     private starfieldCurrentSpeedFactor = CRUISE_SPEED;
     private starfieldTargetSpeedFactor = -1;
-    private starfieldSpeedUniform = new THREE.Uniform(CRUISE_SPEED);
+    private starfieldForwardSpeedUniform = new THREE.Uniform(CRUISE_SPEED);
+    private starfieldRotationalSpeedUniform = new THREE.Uniform(CRUISE_SPEED);
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -142,6 +141,7 @@ export class RenderingService {
             new THREE.ShaderMaterial({
               uniforms: {
                   iSpeed: { value: 0.0 },
+                  iSpeedRot: { value: 0.0 },
                   iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)}
               },
               vertexShader: starfieldVS?starfieldVS:undefined,
@@ -192,7 +192,7 @@ export class RenderingService {
 
         this.cameraDollyOutMaxDist = this.camera.position.distanceTo(this.globe.position) * 1.5;
 
-        this.globe.scale.set(GLOBE_FAR_AWAY_SCALE, GLOBE_FAR_AWAY_SCALE, GLOBE_FAR_AWAY_SCALE);
+        this.globe.scale.set(GLOBE_SCALE, GLOBE_SCALE, GLOBE_SCALE);
         this.scene.add(this.globe);
 
 
@@ -339,37 +339,30 @@ export class RenderingService {
                         this.starfieldCurrentSpeedFactor = this.starfieldTargetSpeedFactor;
                         this.starfieldTargetSpeedFactor = -1;
                     }
-
-                } else {
-                    this.starfieldCurrentSpeedFactor -= delta * DECELERATION;
-
-                    if (this.starfieldCurrentSpeedFactor <= this.starfieldTargetSpeedFactor) {
-                        this.starfieldCurrentSpeedFactor = this.starfieldTargetSpeedFactor;
-                        this.starfieldTargetSpeedFactor = -1;
-                    }
                 }
             }
-
-            //console.log("speed: " + this.starfieldCurrentSpeedFactor);
 
             const material = this.starfieldQuad.material as THREE.ShaderMaterial;
 
             const t = this.clock.getElapsedTime();
-            this.starfieldSpeedUniform.value = this.starfieldCurrentSpeedFactor * t;
-            material.uniforms['iSpeed'] = this.starfieldSpeedUniform; 
-        }
+            this.starfieldForwardSpeedUniform.value = this.starfieldCurrentSpeedFactor * t;
+            material.uniforms['iSpeed'] = this.starfieldForwardSpeedUniform; 
 
-        //TODO need separate state here
-        if (this.starfieldState === StarfieldState.Halt) {
-            if (this.globe.scale.x < GLOBE_FINAL_SCALE) {
-                let newScale = this.globe.scale.x + GLOBE_STEP_SCALE * delta;
-                 
-                if (newScale > GLOBE_FINAL_SCALE) {
-                    newScale = GLOBE_FINAL_SCALE;
-                }
+            switch(this.starfieldState) {
+                case StarfieldState.Halt:
+                    this.starfieldRotationalSpeedUniform.value = ROTATIONAL_HALT_SPEED * t;
+                    break;
 
-                this.globe.scale.set(newScale, newScale, newScale);
+                case StarfieldState.Cruise:
+                    this.starfieldRotationalSpeedUniform.value = this.starfieldForwardSpeedUniform.value;
+                    break;
+
+                case StarfieldState.Hyper:
+                    this.starfieldRotationalSpeedUniform.value = this.starfieldForwardSpeedUniform.value / 2.0;
+                    break;
             }
+
+            material.uniforms['iSpeedRot'] = this.starfieldRotationalSpeedUniform;
         }
 
         for (let animation of this.activeAnimations) {
@@ -406,7 +399,8 @@ export class RenderingService {
 
         switch (state) {
             case StarfieldState.Halt:
-                this.starfieldTargetSpeedFactor = HALT_SPEED;
+                this.starfieldCurrentSpeedFactor = HALT_SPEED;
+                this.starfieldTargetSpeedFactor = -1;
                 break;
 
             case StarfieldState.Cruise:
