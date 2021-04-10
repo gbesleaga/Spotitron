@@ -14,7 +14,8 @@ export class CountryDataService {
 
     private chartData: Map<string, CountryChart> = new Map();
 
-    private charDataReadySubject: Subject<void> = new Subject();
+    private chartDataProgressSubject: Subject<number> = new Subject();
+    private chartDataReadySubject: Subject<void> = new Subject();
 
     public readonly countryNames: string[];
 
@@ -31,7 +32,7 @@ export class CountryDataService {
 
     public fetchChartData() {
         //TODO get all
-        this.fetchNextCountry(0, 20 /*this.countryNames.length*/);
+        this.fetchNextCountry(0, this.countryNames.length);
     }
 
     private fetchNextCountry(at: number, stop: number) {
@@ -39,6 +40,8 @@ export class CountryDataService {
           this.chartDataReady();
           return;
         }
+
+        this.chartDataProgress( at * 100 / stop);
     
         const requests = [];
     
@@ -70,8 +73,12 @@ export class CountryDataService {
         });
     }
 
+    public onChartDataProgress() {
+      return this.chartDataProgressSubject.asObservable();
+    }
+
     public onChartDataReady() {
-      return this.charDataReadySubject.asObservable();
+      return this.chartDataReadySubject.asObservable();
     }
 
     public getChartData() {
@@ -82,6 +89,10 @@ export class CountryDataService {
       return this.chartData.get(country);
     }
 
+    private chartDataProgress(completionPercentage: number) {
+      this.chartDataProgressSubject.next(completionPercentage);
+    }
+
     private chartDataReady() {
       for (let chart of this.chartData) {
         //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
@@ -90,6 +101,6 @@ export class CountryDataService {
         //console.log(chart);
       }
 
-      this.charDataReadySubject.next();
+      this.chartDataReadySubject.next();
     }
 }

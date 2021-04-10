@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SpotifyHttpClientService, AuthService } from 'spotify-lib';
+import { RenderingService, StarfieldState } from 'src/app/rendering/rendering.service';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 
 @Component({
@@ -11,14 +12,18 @@ import { CountryDataService } from 'src/app/shared/country-data.service';
 })
 export class AuthCallbackComponent implements OnInit, OnDestroy {
 
-  private chartDataSubscribtion: Subscription | undefined = undefined;
+  loadingProgress = 0;
+
+  private chartDataProgressSubscription: Subscription | undefined = undefined;
+  private chartDataReadySubscription: Subscription | undefined = undefined;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private spotifyHttpClient: SpotifyHttpClientService,
     private authService: AuthService,
-    private countryDataService: CountryDataService
+    private countryDataService: CountryDataService,
+    private renderingService: RenderingService,
     /*private notificationService: NotificationsService*/) { 
     }
 
@@ -96,15 +101,25 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
     }
 
     private loadCharts() {
+      this.renderingService.setStarfieldState(StarfieldState.Hyper);
+
+      this.chartDataProgressSubscription = this.countryDataService.onChartDataProgress().subscribe( progress => {
+        this.loadingProgress = progress;
+      });
+
       this.countryDataService.fetchChartData();
-      this.chartDataSubscribtion = this.countryDataService.onChartDataReady().subscribe( () => {
+      this.chartDataReadySubscription = this.countryDataService.onChartDataReady().subscribe( () => {
         this.router.navigate(['view/main']);
       });
     }
 
     ngOnDestroy() {
-      if (this.chartDataSubscribtion) {
-        this.chartDataSubscribtion.unsubscribe();
+      if (this.chartDataProgressSubscription) {
+        this.chartDataProgressSubscription.unsubscribe();
+      }
+
+      if (this.chartDataReadySubscription) {
+        this.chartDataReadySubscription.unsubscribe();
       }
     }
 }

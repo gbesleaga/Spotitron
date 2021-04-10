@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from 'spotify-lib';
 
-import { RenderingService } from 'src/app/rendering/rendering.service';
+import { RenderingService, StarfieldState } from 'src/app/rendering/rendering.service';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 
 
@@ -23,6 +23,7 @@ export class MainViewComponent implements AfterViewInit {
     }
 
   ngAfterViewInit(){
+    this.renderingService.setStarfieldState(StarfieldState.Halt);
     this.renderingService.initGlobe(this.countryDataService.getChartData());
   }
 

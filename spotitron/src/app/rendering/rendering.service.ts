@@ -23,7 +23,24 @@ interface Animation {
     reverseAction: AnimationAction | undefined;
 }
 
+const GLOBE_FAR_AWAY_SCALE = 0.0;
+const GLOBE_FINAL_SCALE = 250.0;
+const GLOBE_STEP_SCALE = 100.0;
 const COUNTRY_EXTRUDE_SCALE = 1.3;
+
+// starfield
+export enum StarfieldState {
+    Halt,
+    Cruise,
+    Hyper
+};
+
+const HALT_SPEED = 0.0;
+const CRUISE_SPEED = 0.02;
+const HYPER_SPEED = 1.0;
+
+const ACCELERATION = 10;
+const DECELERATION = 10;
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
@@ -43,8 +60,10 @@ export class RenderingService {
 
     private sceneStarfield: THREE.Scene = new THREE.Scene();
     private starfieldQuad: THREE.Mesh | undefined;
-    private starfieldSpeedFactor = 0.; //0.02;
-    private starfieldSpeedUniform = new THREE.Uniform(0.0);
+    private starfieldState = StarfieldState.Cruise;
+    private starfieldCurrentSpeedFactor = CRUISE_SPEED;
+    private starfieldTargetSpeedFactor = -1;
+    private starfieldSpeedUniform = new THREE.Uniform(CRUISE_SPEED);
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -173,7 +192,7 @@ export class RenderingService {
 
         this.cameraDollyOutMaxDist = this.camera.position.distanceTo(this.globe.position) * 1.5;
 
-        this.globe.scale.set(250, 250, 250);
+        this.globe.scale.set(GLOBE_FAR_AWAY_SCALE, GLOBE_FAR_AWAY_SCALE, GLOBE_FAR_AWAY_SCALE);
         this.scene.add(this.globe);
 
 
@@ -307,17 +326,51 @@ export class RenderingService {
     }
 
     public render() {
+        //animations
+        const delta = this.clock.getDelta();
+
         //starfield
         if (this.starfieldQuad) {
+            if (this.starfieldTargetSpeedFactor >= 0) {
+                if (this.starfieldCurrentSpeedFactor < this.starfieldTargetSpeedFactor) {
+                    this.starfieldCurrentSpeedFactor += delta * ACCELERATION;
+
+                    if (this.starfieldCurrentSpeedFactor >= this.starfieldTargetSpeedFactor) {
+                        this.starfieldCurrentSpeedFactor = this.starfieldTargetSpeedFactor;
+                        this.starfieldTargetSpeedFactor = -1;
+                    }
+
+                } else {
+                    this.starfieldCurrentSpeedFactor -= delta * DECELERATION;
+
+                    if (this.starfieldCurrentSpeedFactor <= this.starfieldTargetSpeedFactor) {
+                        this.starfieldCurrentSpeedFactor = this.starfieldTargetSpeedFactor;
+                        this.starfieldTargetSpeedFactor = -1;
+                    }
+                }
+            }
+
+            //console.log("speed: " + this.starfieldCurrentSpeedFactor);
+
             const material = this.starfieldQuad.material as THREE.ShaderMaterial;
 
             const t = this.clock.getElapsedTime();
-            this.starfieldSpeedUniform.value = this.starfieldSpeedFactor * t;
+            this.starfieldSpeedUniform.value = this.starfieldCurrentSpeedFactor * t;
             material.uniforms['iSpeed'] = this.starfieldSpeedUniform; 
         }
 
-        //animations
-        const delta = this.clock.getDelta();
+        //TODO need separate state here
+        if (this.starfieldState === StarfieldState.Halt) {
+            if (this.globe.scale.x < GLOBE_FINAL_SCALE) {
+                let newScale = this.globe.scale.x + GLOBE_STEP_SCALE * delta;
+                 
+                if (newScale > GLOBE_FINAL_SCALE) {
+                    newScale = GLOBE_FINAL_SCALE;
+                }
+
+                this.globe.scale.set(newScale, newScale, newScale);
+            }
+        }
 
         for (let animation of this.activeAnimations) {
             animation.mixer.update(delta);
@@ -344,6 +397,28 @@ export class RenderingService {
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
         }
+    }
+
+    public setStarfieldState(state: StarfieldState) {
+        if (this.starfieldState === state) {
+            return;
+        }
+
+        switch (state) {
+            case StarfieldState.Halt:
+                this.starfieldTargetSpeedFactor = HALT_SPEED;
+                break;
+
+            case StarfieldState.Cruise:
+                this.starfieldTargetSpeedFactor = CRUISE_SPEED;
+                break;
+
+            case StarfieldState.Hyper:
+                this.starfieldTargetSpeedFactor = HYPER_SPEED;
+                break;
+        }
+
+        this.starfieldState = state;
     }
 
     private onMouseDown(e: MouseEvent) {
