@@ -21,7 +21,7 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { FullScreenQuad, Pass } from './pass';
-import { CopyShader } from './copy-shader';
+import { CopyShader } from '../shaders/copy-shader';
 
 const BlurDirectionX = new Vector2( 1.0, 0.0 );
 const BlurDirectionY = new Vector2( 0.0, 1.0 );

@@ -11,10 +11,11 @@ import { CountryChart, Position2D } from '../shared/types';
 
 import { Map3DGeometry } from './geometry/Map3DGeometry';
 import { EffectComposer } from './postprocessing/effect-composer';
-import { FXAAShader } from './postprocessing/fxaa-shader';
+import { FXAAShader } from './shaders/fxaa-shader';
 import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
-import { ShaderPass } from './postprocessing/shared-pass';
+import { ShaderPass } from './postprocessing/shader-pass';
+import { ClearPass } from './postprocessing/clear-pass';
 
 interface Animation {
     mixer: AnimationMixer;
@@ -39,6 +40,11 @@ export class RenderingService {
     selectedCountryName: string = "";
 
     onCountrySelectedCallback: (() => void) | undefined = undefined;
+
+    private sceneStarfield: THREE.Scene = new THREE.Scene();
+    private starfieldQuad: THREE.Mesh | undefined;
+    private starfieldSpeedFactor = 0.; //0.02;
+    private starfieldSpeedUniform = new THREE.Uniform(0.0);
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -94,20 +100,74 @@ export class RenderingService {
 
     private countryAnimations: Map<string, Animation> = new Map();
 
-
-    public init(charts: Map<string, CountryChart>) {
+    public init()
+    {
         this.camera.position.copy(this.cameraInitialPosition);
         this.camera.lookAt(this.scene.position);
         this.scene.add(this.camera);
 
-        this.renderer.setSize( window.innerWidth, window.innerHeight);
-        this.renderer.setClearColor(0xff0000);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        //this.renderer.setClearColor(0xff0000, 0);
 
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         if (canvasPlaceholder) {
             canvasPlaceholder.appendChild(this.renderer.domElement);
         }
-    
+
+        // starfield
+        const starfieldVS = document.getElementById('starfield-vs')?.textContent;
+        const starfieldFS = document.getElementById('starfield-fs')?.textContent;
+
+        this.starfieldQuad = new THREE.Mesh(
+            new THREE.PlaneGeometry(2, 2),
+            new THREE.ShaderMaterial({
+              uniforms: {
+                  iSpeed: { value: 0.0 },
+                  iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)}
+              },
+              vertexShader: starfieldVS?starfieldVS:undefined,
+              fragmentShader: starfieldFS?starfieldFS:undefined, 
+              depthWrite: false,
+              depthTest: false
+            })
+        );
+
+        this.sceneStarfield.add(this.starfieldQuad);
+
+        // render passes
+        this.composer = new EffectComposer(this.renderer);
+
+        const clearPass = new ClearPass(0xff0000, 1.0);
+        this.composer.addPass( clearPass );
+
+        const starfieldPass = new RenderPass(this.sceneStarfield, this.camera);
+        starfieldPass.clear = false;
+        this.composer.addPass(starfieldPass);
+
+        const renderPass = new RenderPass(this.scene, this.camera);
+        renderPass.clear = false;
+        this.composer.addPass(renderPass);
+
+        this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
+        this.composer.addPass(this.outlinePass);
+
+        this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {
+            this.outlinePass!.patternTexture = texture;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+        });
+
+        this.effectFXAA = new ShaderPass(new FXAAShader());
+        this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+        this.composer.addPass(this.effectFXAA);
+
+        //const copyPass = new ShaderPass(new CopyShader);
+        //this.composer.addPass(copyPass);
+
+        this.resize();
+    }
+
+    public initGlobe(charts: Map<string, CountryChart>) {
         this.controls = new OrbitControls(this.camera, this.renderer.domElement)
         this.controls.enableZoom = false;
 
@@ -118,13 +178,13 @@ export class RenderingService {
 
 
         let radius =  0.995;
-        let geometry = new THREE.SphereGeometry(radius, 30, 15);
+        let geometry = new THREE.SphereGeometry(radius, 90, 45);
         let material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 
         //this.textureLoader.setCrossOrigin('*');
 
-        const vs = document.getElementById( "sem-vs" )?.textContent;
-        const fs = document.getElementById( "sem-fs" )?.textContent;
+        const vs = document.getElementById("country-vs")?.textContent;
+        const fs = document.getElementById("country-fs")?.textContent;
 
         //console.log(vs);
 
@@ -237,25 +297,6 @@ export class RenderingService {
             i++;
         }
 
-        // postprocessing
-        this.composer = new EffectComposer(this.renderer);
-
-        const renderPass = new RenderPass(this.scene, this.camera);
-        this.composer.addPass(renderPass);
-
-        this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
-        this.composer.addPass(this.outlinePass);
-
-        this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {
-            this.outlinePass!.patternTexture = texture;
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-        });
-
-        this.effectFXAA = new ShaderPass(new FXAAShader());
-        this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-        this.composer.addPass(this.effectFXAA);
-
         // event listening
         this.renderer.domElement.addEventListener('pointerdown', (e) => this.onMouseDown(e));
         this.renderer.domElement.addEventListener('pointermove', (e) => this.onMouseMove(e));
@@ -263,12 +304,17 @@ export class RenderingService {
         this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
 
         window.addEventListener('resize', () => this.resize(), false);
-
-        this.resize();
     }
 
     public render() {
-        this.composer?.render();
+        //starfield
+        if (this.starfieldQuad) {
+            const material = this.starfieldQuad.material as THREE.ShaderMaterial;
+
+            const t = this.clock.getElapsedTime();
+            this.starfieldSpeedUniform.value = this.starfieldSpeedFactor * t;
+            material.uniforms['iSpeed'] = this.starfieldSpeedUniform; 
+        }
 
         //animations
         const delta = this.clock.getDelta();
@@ -280,6 +326,8 @@ export class RenderingService {
         if (this.cameraAnimating) {
             this.camera.lookAt(0,0,0); // keep camera looking at center
         }
+
+        this.composer?.render();
     };
 
     public resize() {
