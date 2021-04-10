@@ -14,7 +14,7 @@ export class CountryDataService {
 
     private chartData: Map<string, CountryChart> = new Map();
 
-    private charDataSubject: Subject<Map<string, CountryChart>> = new Subject();
+    private charDataReadySubject: Subject<void> = new Subject();
 
     public readonly countryNames: string[];
 
@@ -36,7 +36,7 @@ export class CountryDataService {
 
     private fetchNextCountry(at: number, stop: number) {
         if (at >= stop) {
-          this.onChartDataReady();
+          this.chartDataReady();
           return;
         }
     
@@ -70,23 +70,26 @@ export class CountryDataService {
         });
     }
 
+    public onChartDataReady() {
+      return this.charDataReadySubject.asObservable();
+    }
+
     public getChartData() {
-        return this.charDataSubject.asObservable();
+      return this.chartData;
     }
 
     public getChartDataForCountry(country: string): CountryChart | undefined {
-        return this.chartData.get(country);
+      return this.chartData.get(country);
     }
 
-    private onChartDataReady() {
-        for (let chart of this.chartData) {
-            //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
-            //console.log(chart.country + " : " + playlistItems[0].track.name);
-            
-            //console.log(chart);
-          }
+    private chartDataReady() {
+      for (let chart of this.chartData) {
+        //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
+        //console.log(chart.country + " : " + playlistItems[0].track.name);
+        
+        //console.log(chart);
+      }
 
-        this.charDataSubject.next(this.chartData);
+      this.charDataReadySubject.next();
     }
-
 }

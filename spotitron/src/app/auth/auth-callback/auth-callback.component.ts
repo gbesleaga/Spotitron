@@ -1,19 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { SpotifyHttpClientService, AuthService } from 'spotify-lib';
+import { CountryDataService } from 'src/app/shared/country-data.service';
 
 @Component({
   selector: 'app-auth-callback',
   templateUrl: './auth-callback.component.html',
   styleUrls: ['./auth-callback.component.css']
 })
-export class AuthCallbackComponent implements OnInit {
+export class AuthCallbackComponent implements OnInit, OnDestroy {
+
+  private chartDataSubscribtion: Subscription | undefined = undefined;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private spotifyHttpClient: SpotifyHttpClientService,
-    private authService: AuthService
+    private authService: AuthService,
+    private countryDataService: CountryDataService
     /*private notificationService: NotificationsService*/) { 
     }
 
@@ -62,7 +67,7 @@ export class AuthCallbackComponent implements OnInit {
               console.log('Login failed.');
               this.router.navigate(['']);
             } else {
-              this.router.navigate(['view/main']);
+              this.loadCharts();
             }
           }, 
           err => {
@@ -88,5 +93,18 @@ export class AuthCallbackComponent implements OnInit {
       }
   
       return false;
+    }
+
+    private loadCharts() {
+      this.countryDataService.fetchChartData();
+      this.chartDataSubscribtion = this.countryDataService.onChartDataReady().subscribe( () => {
+        this.router.navigate(['view/main']);
+      });
+    }
+
+    ngOnDestroy() {
+      if (this.chartDataSubscribtion) {
+        this.chartDataSubscribtion.unsubscribe();
+      }
     }
 }
