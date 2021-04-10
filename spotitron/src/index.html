@@ -23,7 +23,8 @@
     #define BRIGHTNESS .02
 
     uniform vec2 iResolution; // viewport resolution (pixels)
-    uniform float iSpeed; // time * factor
+    uniform float iSpeed;   // time * factor
+    uniform float iSpeedRot; // time * factor
 
     varying vec2 vUV;
 
@@ -102,7 +103,7 @@
 		void main() {
       vec2 fragCoord = vUV * iResolution;
       vec2 uv = (fragCoord - .5*iResolution.xy)/iResolution.y;
-      uv *= .5;
+      uv *= 0.5;
 
       // this controls the speed
       //float t = iTime * 0.02; // no globe speed
@@ -111,7 +112,7 @@
 
       float t = iSpeed;
 
-      uv *= Rot(t);
+      uv *= Rot(iSpeedRot);
       
       vec3 col = vec3(0);
       

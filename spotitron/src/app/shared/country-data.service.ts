@@ -14,7 +14,8 @@ export class CountryDataService {
 
     private chartData: Map<string, CountryChart> = new Map();
 
-    private charDataSubject: Subject<Map<string, CountryChart>> = new Subject();
+    private chartDataProgressSubject: Subject<number> = new Subject();
+    private chartDataReadySubject: Subject<void> = new Subject();
 
     public readonly countryNames: string[];
 
@@ -31,14 +32,16 @@ export class CountryDataService {
 
     public fetchChartData() {
         //TODO get all
-        this.fetchNextCountry(0, 20 /*this.countryNames.length*/);
+        this.fetchNextCountry(0, this.countryNames.length);
     }
 
     private fetchNextCountry(at: number, stop: number) {
         if (at >= stop) {
-          this.onChartDataReady();
+          this.chartDataReady();
           return;
         }
+
+        this.chartDataProgress( at * 100 / stop);
     
         const requests = [];
     
@@ -63,30 +66,43 @@ export class CountryDataService {
               }
             }
           }
-          this.fetchNextCountry(at + step, stop);
+          setTimeout(() => {
+            this.fetchNextCountry(at + step, stop);
+          }, 100);
         },
         err => {
           console.log("An error occured: " + err);
         });
     }
 
+    public onChartDataProgress() {
+      return this.chartDataProgressSubject.asObservable();
+    }
+
+    public onChartDataReady() {
+      return this.chartDataReadySubject.asObservable();
+    }
+
     public getChartData() {
-        return this.charDataSubject.asObservable();
+      return this.chartData;
     }
 
     public getChartDataForCountry(country: string): CountryChart | undefined {
-        return this.chartData.get(country);
+      return this.chartData.get(country);
     }
 
-    private onChartDataReady() {
-        for (let chart of this.chartData) {
-            //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
-            //console.log(chart.country + " : " + playlistItems[0].track.name);
-            
-            //console.log(chart);
-          }
-
-        this.charDataSubject.next(this.chartData);
+    private chartDataProgress(completionPercentage: number) {
+      this.chartDataProgressSubject.next(completionPercentage);
     }
 
+    private chartDataReady() {
+      for (let chart of this.chartData) {
+        //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
+        //console.log(chart.country + " : " + playlistItems[0].track.name);
+        
+        //console.log(chart);
+      }
+
+      this.chartDataReadySubject.next();
+    }
 }

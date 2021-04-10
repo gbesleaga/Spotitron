@@ -23,7 +23,22 @@ interface Animation {
     reverseAction: AnimationAction | undefined;
 }
 
+const GLOBE_SCALE = 250.0;
 const COUNTRY_EXTRUDE_SCALE = 1.3;
+
+// starfield
+export enum StarfieldState {
+    Halt,
+    Cruise,
+    Hyper
+};
+
+const HALT_SPEED = 0.0;
+const ROTATIONAL_HALT_SPEED = 0.005;
+const CRUISE_SPEED = 0.02;
+const HYPER_SPEED = 10;
+
+const ACCELERATION = 0.5;
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
@@ -43,8 +58,11 @@ export class RenderingService {
 
     private sceneStarfield: THREE.Scene = new THREE.Scene();
     private starfieldQuad: THREE.Mesh | undefined;
-    private starfieldSpeedFactor = 0.; //0.02;
-    private starfieldSpeedUniform = new THREE.Uniform(0.0);
+    private starfieldState = StarfieldState.Cruise;
+    private starfieldCurrentSpeedFactor = CRUISE_SPEED;
+    private starfieldTargetSpeedFactor = -1;
+    private starfieldForwardSpeedUniform = new THREE.Uniform(CRUISE_SPEED);
+    private starfieldRotationalSpeedUniform = new THREE.Uniform(CRUISE_SPEED);
 
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
@@ -123,6 +141,7 @@ export class RenderingService {
             new THREE.ShaderMaterial({
               uniforms: {
                   iSpeed: { value: 0.0 },
+                  iSpeedRot: { value: 0.0 },
                   iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)}
               },
               vertexShader: starfieldVS?starfieldVS:undefined,
@@ -173,7 +192,7 @@ export class RenderingService {
 
         this.cameraDollyOutMaxDist = this.camera.position.distanceTo(this.globe.position) * 1.5;
 
-        this.globe.scale.set(250, 250, 250);
+        this.globe.scale.set(GLOBE_SCALE, GLOBE_SCALE, GLOBE_SCALE);
         this.scene.add(this.globe);
 
 
@@ -307,17 +326,44 @@ export class RenderingService {
     }
 
     public render() {
+        //animations
+        const delta = this.clock.getDelta();
+
         //starfield
         if (this.starfieldQuad) {
+            if (this.starfieldTargetSpeedFactor >= 0) {
+                if (this.starfieldCurrentSpeedFactor < this.starfieldTargetSpeedFactor) {
+                    this.starfieldCurrentSpeedFactor += delta * ACCELERATION;
+
+                    if (this.starfieldCurrentSpeedFactor >= this.starfieldTargetSpeedFactor) {
+                        this.starfieldCurrentSpeedFactor = this.starfieldTargetSpeedFactor;
+                        this.starfieldTargetSpeedFactor = -1;
+                    }
+                }
+            }
+
             const material = this.starfieldQuad.material as THREE.ShaderMaterial;
 
             const t = this.clock.getElapsedTime();
-            this.starfieldSpeedUniform.value = this.starfieldSpeedFactor * t;
-            material.uniforms['iSpeed'] = this.starfieldSpeedUniform; 
-        }
+            this.starfieldForwardSpeedUniform.value = this.starfieldCurrentSpeedFactor * t;
+            material.uniforms['iSpeed'] = this.starfieldForwardSpeedUniform; 
 
-        //animations
-        const delta = this.clock.getDelta();
+            switch(this.starfieldState) {
+                case StarfieldState.Halt:
+                    this.starfieldRotationalSpeedUniform.value = ROTATIONAL_HALT_SPEED * t;
+                    break;
+
+                case StarfieldState.Cruise:
+                    this.starfieldRotationalSpeedUniform.value = this.starfieldForwardSpeedUniform.value;
+                    break;
+
+                case StarfieldState.Hyper:
+                    this.starfieldRotationalSpeedUniform.value = this.starfieldForwardSpeedUniform.value / 2.0;
+                    break;
+            }
+
+            material.uniforms['iSpeedRot'] = this.starfieldRotationalSpeedUniform;
+        }
 
         for (let animation of this.activeAnimations) {
             animation.mixer.update(delta);
@@ -344,6 +390,29 @@ export class RenderingService {
             this.camera.aspect = w / h;
             this.camera.updateProjectionMatrix();
         }
+    }
+
+    public setStarfieldState(state: StarfieldState) {
+        if (this.starfieldState === state) {
+            return;
+        }
+
+        switch (state) {
+            case StarfieldState.Halt:
+                this.starfieldCurrentSpeedFactor = HALT_SPEED;
+                this.starfieldTargetSpeedFactor = -1;
+                break;
+
+            case StarfieldState.Cruise:
+                this.starfieldTargetSpeedFactor = CRUISE_SPEED;
+                break;
+
+            case StarfieldState.Hyper:
+                this.starfieldTargetSpeedFactor = HYPER_SPEED;
+                break;
+        }
+
+        this.starfieldState = state;
     }
 
     private onMouseDown(e: MouseEvent) {
