@@ -72,6 +72,7 @@ export class RenderingService {
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
 
+    private countryDefaultMaterials: THREE.MeshBasicMaterial[] = [];
     private countryExtrudeSuffix = "_extrude";
 
     // postprocessing
@@ -197,8 +198,24 @@ export class RenderingService {
 
 
         let radius =  0.995;
+
         let geometry = new THREE.SphereGeometry(radius, 90, 45);
-        let material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+        
+        let material = new THREE.MeshBasicMaterial({ color: 0x2c3e50 });
+
+    
+    /*
+        const globeTexture = this.textureLoader.load('/assets/images/globe6.jpg');
+        globeTexture.wrapS = globeTexture.wrapT = THREE.ClampToEdgeWrapping;
+        globeTexture.minFilter = globeTexture.magFilter = THREE.LinearFilter;
+        globeTexture.anisotropy = 4;
+
+        let material = new THREE.MeshBasicMaterial({
+            map: globeTexture
+        });
+        
+    */
+        this.globe.add(new THREE.Mesh(geometry, material));
 
         //this.textureLoader.setCrossOrigin('*');
 
@@ -207,17 +224,17 @@ export class RenderingService {
 
         //console.log(vs);
 
-        const defaultCountryMaterial = new THREE.ShaderMaterial({
-            uniforms: { 
-                tMatCap: { value: this.textureLoader.load("https://jbouny.github.io/texturing-intro-slides/iframes/resources/original/uv-test.png") }
-            },
-            vertexShader: vs?vs:"",
-            fragmentShader: fs?fs:""
-        });
-    
-        defaultCountryMaterial.uniforms.tMatCap.value.wrapS = defaultCountryMaterial.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
+        // country default materials
+        this.countryDefaultMaterials.push(
+            new THREE.MeshBasicMaterial({ color: 0x1abc9c }),
+            new THREE.MeshBasicMaterial({ color: 0x2ecc71 }),
+            new THREE.MeshBasicMaterial({ color: 0x3498db }),
+            new THREE.MeshBasicMaterial({ color: 0x9b59b6 }),
+            new THREE.MeshBasicMaterial({ color: 0xf1c40f }),
+            new THREE.MeshBasicMaterial({ color: 0xe67e22 }),
+            new THREE.MeshBasicMaterial({ color: 0xe74c3c })
+        );
 
-        this.globe.add(new THREE.Mesh(geometry, material));
 
         let countries: any = this.countryDataService.geometryData;
 
@@ -230,7 +247,7 @@ export class RenderingService {
             let cGeometry = new Map3DGeometry (countries[name], 2);
             let cGeometryExtrude = new Map3DGeometry (countries[name], 0)
 
-            let material: THREE.ShaderMaterial | undefined = defaultCountryMaterial;
+            let material: THREE.ShaderMaterial | THREE.MeshBasicMaterial | undefined = this.countryDefaultMaterials[i % this.countryDefaultMaterials.length];
             let url = '';
 
             // country has chart?
@@ -268,8 +285,8 @@ export class RenderingService {
                 }
             }
 
-            let cMesh = new THREE.Mesh (cGeometry, material);
-            let cMeshExtrude = new THREE.Mesh (cGeometryExtrude, material);
+            let cMesh = new THREE.Mesh(cGeometry, material);
+            let cMeshExtrude = new THREE.Mesh(cGeometryExtrude, material);
             
             //TODO are we smart about this or will everything be considered for rendering??
             cMesh.visible = true;
