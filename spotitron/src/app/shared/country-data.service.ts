@@ -6,11 +6,17 @@ import { CountryChart } from "./types";
 
 import { catchError, map } from 'rxjs/operators'
 import { forkJoin, of, Subject } from 'rxjs';
+import { extractChart } from "./spotify-lib-util";
+
+
+
+
 
 @Injectable({providedIn: 'root'})
 export class CountryDataService {
-    
     public readonly geometryData: any = undefined;
+
+    private chartDataReady: boolean = false;
 
     private chartData: Map<string, CountryChart> = new Map();
 
@@ -19,25 +25,41 @@ export class CountryDataService {
 
     public readonly countryNames: string[];
 
+    private readonly storageKeyForChartData: string = 'STRON_charts';
+
     constructor(private spotifyService: SpotifyHttpClientService,
-        private authService: AuthService) {
+      private authService: AuthService) {
+      
         this.geometryData = countryGeometryData;
 
-        this.countryNames = [];
+        if (this.fetchChartDataFromStorage()) {
+          this.chartDataReady = true;
+          this.countryNames = Array.from(this.chartData.keys());
+        } else {
+          this.chartDataReady = false;
+
+          this.countryNames = [];
         
-        for (let country in this.geometryData) {
-            this.countryNames.push(country);
+          for (let country in this.geometryData) {
+              this.countryNames.push(country);
+          }
         }
     }
 
+    public isChartDataReady() {
+      return this.chartDataReady;
+    }
+
     public fetchChartData() {
-        //TODO get all
+      if (!this.chartDataReady) {
+        // fetch from server
         this.fetchNextCountry(0, this.countryNames.length);
+      }
     }
 
     private fetchNextCountry(at: number, stop: number) {
         if (at >= stop) {
-          this.chartDataReady();
+          this.setChartDataReady();
           return;
         }
 
@@ -62,13 +84,12 @@ export class CountryDataService {
               const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
     
               if (playlistItems) {
-                this.chartData.set(chart.country, chart);
+                this.chartData.set(chart.country, extractChart(chart));
               }
             }
           }
-          setTimeout(() => {
-            this.fetchNextCountry(at + step, stop);
-          }, 100);
+      
+          this.fetchNextCountry(at + step, stop);    
         },
         err => {
           console.log("An error occured: " + err);
@@ -95,7 +116,7 @@ export class CountryDataService {
       this.chartDataProgressSubject.next(completionPercentage);
     }
 
-    private chartDataReady() {
+    private setChartDataReady() {
       for (let chart of this.chartData) {
         //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
         //console.log(chart.country + " : " + playlistItems[0].track.name);
@@ -103,6 +124,35 @@ export class CountryDataService {
         //console.log(chart);
       }
 
+      this.chartDataReady = true;
+
+      // store
+      this.storeChartData();
+
+      // notify
       this.chartDataReadySubject.next();
+    }
+
+    private fetchChartDataFromStorage() : boolean {
+      const chartDataAsStr = localStorage.getItem(this.storageKeyForChartData);
+
+      if (chartDataAsStr) {
+        this.chartData = new Map(JSON.parse(chartDataAsStr));
+
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    private storeChartData() {
+      try {
+        const storedData = JSON.stringify([...this.chartData]);
+        console.log(storedData.length);
+        //TODO additional compression with lz-string?
+        localStorage.setItem(this.storageKeyForChartData, storedData);
+      } catch (e) {
+        console.log("Failed to store charts: " + e.message);
+      }
     }
 }
