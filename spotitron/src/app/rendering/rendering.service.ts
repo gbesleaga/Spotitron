@@ -187,6 +187,8 @@ export class RenderingService {
         //this.composer.addPass(copyPass);
 
         this.resize();
+
+        window.addEventListener('resize', () => this.resize(), false);
     }
 
     public initGlobe(charts: Map<string, CountryChart>) {
@@ -340,8 +342,6 @@ export class RenderingService {
         this.renderer.domElement.addEventListener('pointermove', (e) => this.onMouseMove(e));
         this.renderer.domElement.addEventListener('pointerup', (e) =>   this.onMouseUp(e));
         this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
-
-        window.addEventListener('resize', () => this.resize(), false);
     }
 
     public hideGlobe() {
@@ -410,7 +410,12 @@ export class RenderingService {
             // notify the renderer of the size change
             this.renderer.setSize(w, h);
             this.composer?.setSize(w,h);
-            this.effectFXAA?.uniforms[ 'resolution' ].value.set( 1 / window.innerWidth, 1 / window.innerHeight );
+            this.effectFXAA?.uniforms[ 'resolution' ].value.set( 1 / w, 1 / h );
+
+            if (this.starfieldQuad) {
+                const material = this.starfieldQuad.material as THREE.ShaderMaterial;
+                material.uniforms['iResolution'] = new THREE.Uniform(new THREE.Vector2(w, h));
+            }
 
             // update the camera
             this.camera.aspect = w / h;
