@@ -26,6 +26,10 @@ export class CountryDataService {
     public readonly countryNames: string[];
 
     private readonly storageKeyForChartData: string = 'STRON_charts';
+    
+    //TODO adjust if needed
+    private readonly parallelRequests = 7;
+    private readonly requestWaitIntervalMs = 25;
 
     constructor(private spotifyService: SpotifyHttpClientService,
       private authService: AuthService) {
@@ -76,7 +80,9 @@ export class CountryDataService {
         let step = stop - at;
     
         //TODO figure out how many requests we can send before we get timed-out; 30?
-        if (step > 10) step = 10;
+        if (step > this.parallelRequests) {
+          step = this.parallelRequests;
+        }
     
         for (let i = at; i < at + step; ++i) {
           const request =  this.spotifyService.getCountryChart({accessToken: this.authService.getAccessToken(), countryName: this.countryNames[i] }).pipe(catchError(error => of(error)), map(chart => ({...chart, country: this.countryNames[i]})));
@@ -95,9 +101,12 @@ export class CountryDataService {
             }
           }
       
-          this.fetchNextCountry(at + step, stop);    
+          window.setTimeout(() => {
+            this.fetchNextCountry(at + step, stop);  
+          }, this.requestWaitIntervalMs);
         },
         err => {
+          //TODO error handling
           console.log("An error occured: " + err);
         });
     }
