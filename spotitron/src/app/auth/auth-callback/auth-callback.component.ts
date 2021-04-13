@@ -1,3 +1,4 @@
+import { ThrowStmt } from '@angular/compiler';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -29,8 +30,13 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
       if (this.authService.isAuthenticated()) {
-        this.router.navigate(['view/main']);
-        return;
+        if (this.countryDataService.isChartDataReady()) {
+          this.router.navigate(['view/main']);
+          return;
+        } else {
+          this.loadCharts();
+          return;
+        }
       }
   
       const error: string = this.route.snapshot.queryParams.error;
@@ -107,10 +113,11 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
         this.loadingProgress = progress;
       });
 
-      this.countryDataService.fetchChartData();
       this.chartDataReadySubscription = this.countryDataService.onChartDataReady().subscribe( () => {
         this.router.navigate(['view/main']);
       });
+
+      this.countryDataService.fetchChartData();
     }
 
     ngOnDestroy() {
