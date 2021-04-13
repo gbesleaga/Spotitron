@@ -14,7 +14,6 @@ export class AppComponent implements AfterViewInit {
     private animationService: AnimationService) {}
 
   ngAfterViewInit(){
-    console.log("begin render + animate");
     this.renderingService.init();
     this.animationService.animate();
   }

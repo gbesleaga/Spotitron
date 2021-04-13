@@ -28,6 +28,10 @@ export class MainViewComponent implements AfterViewInit {
   }
 
   onLogout() {
+    // we just need to hide globe, the instance of the service will be recreated
+    this.renderingService.hideGlobe();
+    this.renderingService.setStarfieldState(StarfieldState.Cruise); 
+   
     this.authService.logout();
     this.countryDataService.clearStorage();
     this.router.navigate(['']);
