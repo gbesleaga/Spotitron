@@ -113,10 +113,11 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
         this.loadingProgress = progress;
       });
 
-      this.countryDataService.fetchChartData();
       this.chartDataReadySubscription = this.countryDataService.onChartDataReady().subscribe( () => {
         this.router.navigate(['view/main']);
       });
+
+      this.countryDataService.fetchChartData();
     }
 
     ngOnDestroy() {

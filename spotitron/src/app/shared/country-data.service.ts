@@ -46,6 +46,10 @@ export class CountryDataService {
         }
     }
 
+    public clearStorage() {
+      localStorage.removeItem(this.storageKeyForChartData);
+    }
+
     public isChartDataReady() {
       return this.chartDataReady;
     }
@@ -54,6 +58,8 @@ export class CountryDataService {
       if (!this.chartDataReady) {
         // fetch from server
         this.fetchNextCountry(0, this.countryNames.length);
+      } else {
+        this.chartDataReadySubject.next();
       }
     }
 

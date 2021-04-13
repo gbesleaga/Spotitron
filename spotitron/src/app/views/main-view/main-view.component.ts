@@ -29,6 +29,7 @@ export class MainViewComponent implements AfterViewInit {
 
   onLogout() {
     this.authService.logout();
+    this.countryDataService.clearStorage();
     this.router.navigate(['']);
   }
 }
