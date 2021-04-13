@@ -1,0 +1,14 @@
+/* 
+ !!!changed in deeppurple-amber.css
+mat-progress-bar-buffer{background-color:#2c3e50}
+mat-progress-bar-fill::after{background-color: #f1c40f;}
+*/
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 5%;
+    height: 100%;
+}

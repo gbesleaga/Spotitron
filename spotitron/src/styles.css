@@ -1,4 +1,8 @@
-/* You can add global styles to this file, and also import other style files */
+:root {    
+    --spotify-green: #1DB954;
+    --spotify-green-active: rgb(26, 163, 74);
+    --spotify-white: #FFFFFF;
+  }
 
 * {
     margin: 0;
@@ -13,3 +17,50 @@
     -ms-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
 }
+
+.spotify-auth {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--spotify-green);
+    border-radius: max(15px, 1.66vw);
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.spotify-auth:hover {
+    opacity: 1.0;
+}
+
+.spotify-auth:active {
+    background-color: var(--spotify-green-active);
+}
+
+#spotify-icon {
+    width: max(20px, 2vw);
+    height: max(20px, 2vw);
+    margin: max(5px, 0.5vw);
+    margin-right: max(15px, 1.5vw);
+}
+
+.spotify-text {
+    color: var(--spotify-white);
+    font-size: max(14px, 1.2vw);
+    display: inline-block;
+    font-family: 'Lato', sans-serif;
+    margin-right: max(15px, 1.6vw);
+}
+
+.no-select {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/*
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+*/

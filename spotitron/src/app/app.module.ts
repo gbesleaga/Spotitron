@@ -13,6 +13,8 @@ import { CountryViewComponent } from './views/country-view/country-view.componen
 import { ContextMenuComponent } from './shared/components/context-menu/context-menu.component';
 import { ContextMenuDirective } from './shared/components/context-menu/context-menu.directive';
 import { CountryDataGuardService } from './shared/country-data-guard.service';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { MatProgressBarModule } from '@angular/material/progress-bar'
 
 const appRoutes: Routes = [
   {
@@ -56,7 +58,9 @@ const appRoutes: Routes = [
       storageKeyForAuthToken: 'STRON_authToken',
       storageKeyForAuthTokenValidUntil: 'STRON_authTokenValidUntil',
       storageKeyForAuthRequestState: 'STRON_state'
-    })
+    }),
+    NoopAnimationsModule,
+    MatProgressBarModule
   ],
   providers: [
     AuthService,
