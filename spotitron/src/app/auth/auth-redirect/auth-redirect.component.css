@@ -1,0 +1,17 @@
+.content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#title {
+    color: #f1c40f;
+    margin-bottom: max(20px, 1.33vw);
+    font-size: 8vw; /*120px; */
+    font-family: 'Zen Dots', cursive;
+}
+
