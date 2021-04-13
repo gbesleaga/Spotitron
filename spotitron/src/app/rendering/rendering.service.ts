@@ -49,6 +49,8 @@ export class RenderingService {
             this.countrySelectionService.onClearSelection().subscribe( () => {
                 this.deselectCountry();
             });
+
+            console.log("rendering service constructed!");
     }
 
     countrySelected: boolean = false;
@@ -342,6 +344,13 @@ export class RenderingService {
         window.addEventListener('resize', () => this.resize(), false);
     }
 
+    public hideGlobe() {
+        this.globe.visible = false;
+        if (this.controls) {
+            this.controls.enabled = false;
+        }
+    }
+
     public render() {
         //animations
         const delta = this.clock.getDelta();
@@ -421,7 +430,8 @@ export class RenderingService {
                 break;
 
             case StarfieldState.Cruise:
-                this.starfieldTargetSpeedFactor = CRUISE_SPEED;
+                this.starfieldCurrentSpeedFactor = CRUISE_SPEED;
+                this.starfieldTargetSpeedFactor = -1;
                 break;
 
             case StarfieldState.Hyper:
