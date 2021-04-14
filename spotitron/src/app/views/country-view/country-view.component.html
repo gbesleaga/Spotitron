@@ -31,7 +31,7 @@
             <div class="item-more"></div>
         </div>
 
-        <div class="vcontainer">
+        <div class="vcontainer" id="tracks-container">
             <div *ngFor="let track of displayTracks; let i = index" [ngClass]="('hcontainer chart-tracks ' + (track.playing? 'playing' : ''))" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
                 <div class="item-state">
                     <img 

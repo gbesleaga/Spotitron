@@ -398,6 +398,12 @@ export class CountryViewComponent implements OnInit {
     this.show = false;
     this.countrySelectionService.clearSelection();
     this.pauseActiveTrack();
+
+    // reset scroll
+    const container = document.getElementById("tracks-container");
+    if (container) {
+      container.scrollTop = 0;
+    } 
   }
 
   private getDisplayTrackName(track: SpotifyTrackObject) {
