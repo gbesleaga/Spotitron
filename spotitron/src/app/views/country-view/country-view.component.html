@@ -32,7 +32,7 @@
         </div>
 
         <div class="vcontainer">
-            <div class="hcontainer chart-tracks"  *ngFor="let track of displayTracks; let i = index" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
+            <div *ngFor="let track of displayTracks; let i = index" [ngClass]="('hcontainer chart-tracks ' + (track.playing? 'playing' : ''))" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
                 <div class="item-state">
                     <img 
                         [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 
@@ -40,7 +40,7 @@
                         (click)="togglePlay(i, $event)">
                 </div>
                 <div class="item-title padded">{{track.name}}</div>
-                <div class="item-artist">{{track.artist}}</div>
+                <div class="item-artist padded">{{track.artist}}</div>
                 <div class="item-more">
                     <img 
                     [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 

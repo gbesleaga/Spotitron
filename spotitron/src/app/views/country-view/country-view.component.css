@@ -109,6 +109,15 @@
   opacity: 1.0;
 }
 
+.hcontainer.chart-tracks.playing {
+  color: #2ecc71;
+  opacity: 0.9;
+}
+
+.hcontainer.chart-tracks.playing:hover {
+  opacity: 1.0;
+}
+
 .item-state {
   width: 10%;
   text-align: center;
@@ -122,10 +131,12 @@
 
 .item-title {
   width:45%;
+  cursor: default;
 }
 
 .item-artist {
   width:35%;
+  cursor: default;
 }
 
 .item-title.padded {
