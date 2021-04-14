@@ -397,6 +397,7 @@ export class CountryViewComponent implements OnInit {
   onLeaveView() {
     this.show = false;
     this.countrySelectionService.clearSelection();
+    this.pauseActiveTrack();
   }
 
   private getDisplayTrackName(track: SpotifyTrackObject) {
