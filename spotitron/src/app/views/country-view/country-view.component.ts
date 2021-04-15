@@ -12,6 +12,7 @@ interface DisplayChartTitle {
   showState: boolean;
 
   following: 'yes' | 'no' | 'unknown';
+  followingText: '❤' | '';
 }
 
 interface DisplayTrack {
@@ -37,7 +38,7 @@ export class CountryViewComponent implements OnInit {
   show: boolean = false;
   chartName: string = "";
   displayTracks: DisplayTrack[] = [];
-  displayChartTitle: DisplayChartTitle = {showState: false, following: 'unknown'};
+  displayChartTitle: DisplayChartTitle = {showState: false, following: 'unknown', followingText: ''};
 
   currentlyPlayingTrackIndex: number = -1;
 
@@ -68,6 +69,7 @@ export class CountryViewComponent implements OnInit {
           this.show = true;
           this.chartName = this.countryChart.name;
           this.displayChartTitle.following = 'unknown';
+          this.displayChartTitle.followingText = '';
 
           this.displayTracks = [];
           const tracks: SpotifyPlaylistTrackObject[] = this.countryChart.tracks.items as SpotifyPlaylistTrackObject[];
@@ -122,8 +124,10 @@ export class CountryViewComponent implements OnInit {
             response => {
               if (response[0] === true) {
                 this.displayChartTitle.following = 'yes'
+                this.displayChartTitle.followingText = '❤';
               } else {
                 this.displayChartTitle.following = 'no';
+                this.displayChartTitle.followingText = '';
               }
               this.displayChartTitle.showState = true;
             },
@@ -258,9 +262,11 @@ export class CountryViewComponent implements OnInit {
           this.spotifyService.followPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id}).subscribe(
             () => {
               this.displayChartTitle.following = 'yes';
+              this.displayChartTitle.followingText = '❤';
             },
             err => {
               this.displayChartTitle.following = 'unknown';
+              this.displayChartTitle.followingText = '';
               console.log("Failed to follow!")
               console.log(err);
             }
@@ -277,9 +283,11 @@ export class CountryViewComponent implements OnInit {
           this.spotifyService.unfollowPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id}).subscribe(
             () => {
               this.displayChartTitle.following = 'no';
+              this.displayChartTitle.followingText = '';
             },
             err => {
               this.displayChartTitle.following = 'unknown';
+              this.displayChartTitle.followingText = '';
               console.log("Failed to unfollow!")
               console.log(err);
             }

@@ -10,11 +10,11 @@
     <div class="vcontainer">
         <div class="hcontainer chart-title" (pointerenter)="onChartTitleHoverEnter()" (pointerleave)="onChartTitleHoverLeave()">
             <div class="item-state">
-                <p [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" >
-                    F: {{displayChartTitle.following}}
-                </p>
+                <p> {{displayChartTitle.followingText}} </p>
             </div>
-            <h1>{{chartName}}</h1>
+            <div class="chart-title-text">
+                <h1>{{chartName}}</h1>
+            </div>
             <div class="item-more">
                 <img 
                 [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" 

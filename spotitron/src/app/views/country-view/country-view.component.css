@@ -85,6 +85,18 @@
   font-size: 30px;
 }
 
+.chart-title .item-state {
+  font-size: 40px;
+}
+
+.chart-title-text {
+  width:80%;
+}
+
+.chart-title-text h1 {
+  text-align: center;
+}
+
 .hcontainer.chart-tracks-header {
   color: #7f8c8d;
   background-color: #2c3e50;
