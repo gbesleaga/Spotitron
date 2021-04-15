@@ -86,6 +86,10 @@ export class CountryViewComponent implements OnInit {
 
             this.displayTracks.push(dt);
           }
+
+          // get following state
+          this.getChartFollowingState();  
+
         } else {
           this.onLeaveView();
         }
@@ -113,37 +117,37 @@ export class CountryViewComponent implements OnInit {
         });
   }
 
+  private getChartFollowingState() {
+    this.spotifyService.getUserId({accessToken: this.authService.getAccessToken()}).subscribe(
+      user => {
+        this.spotifyService.areFollowingPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id, userIds: [user.id]}).subscribe(
+          response => {
+            if (response[0] === true) {
+              this.displayChartTitle.following = 'yes'
+              this.displayChartTitle.followingText = '❤';
+            } else {
+              this.displayChartTitle.following = 'no';
+              this.displayChartTitle.followingText = '';
+            }
+          },
+          err => {
+            console.log("Failed to retrieve follow state!");
+            console.log(err);
+          }
+        )
+      },
+      err => {
+        console.log("Failed to retrieve user id!");
+        console.log(err);
+      }
+    );
+  }
+
   ngOnInit(): void {
   }
 
   onChartTitleHoverEnter() {
-    if (this.displayChartTitle.following === 'unknown' && this.countryChart) {
-      this.spotifyService.getUserId({accessToken: this.authService.getAccessToken()}).subscribe(
-        user => {
-          this.spotifyService.areFollowingPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id, userIds: [user.id]}).subscribe(
-            response => {
-              if (response[0] === true) {
-                this.displayChartTitle.following = 'yes'
-                this.displayChartTitle.followingText = '❤';
-              } else {
-                this.displayChartTitle.following = 'no';
-                this.displayChartTitle.followingText = '';
-              }
-              this.displayChartTitle.showState = true;
-            },
-            err => {
-              console.log("Failed to retrieve follow state!");
-              console.log(err);
-            }
-          )
-        },
-        err => {
-          console.log("Failed to retrieve user id!");
-          console.log(err);
-        });
-    } else {
-      this.displayChartTitle.showState = true;
-    }
+    this.displayChartTitle.showState = true;
   }
 
   onChartTitleHoverLeave() {
