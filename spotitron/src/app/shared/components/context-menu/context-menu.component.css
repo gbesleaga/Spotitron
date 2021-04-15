@@ -17,3 +17,7 @@
 .context-menu-item:hover {
   background-color: #7f8c8d;
 }
+
+.context-menu-item.selected {
+  background-color: #7f8c8d;
+}
