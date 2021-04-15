@@ -329,13 +329,6 @@ export class CountryViewComponent implements OnInit {
     const children = [];
 
     items.push({
-      text: 'Save to your Liked Songs', 
-      action: () => {
-        console.log("Saved to your Liked Songs");
-      }
-    });
-
-    items.push({
       text: 'Add to Playlist ...',
       submenuIndex: 0
     });
@@ -373,7 +366,7 @@ export class CountryViewComponent implements OnInit {
     const addToPlaylistMenu = {
       show: false,
       top: 25,
-      left: -200,
+      left: -200, //TODO this is hardcoded to menu width
       items: playlistMenuItems,
       children: []
     }
