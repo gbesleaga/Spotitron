@@ -6,77 +6,172 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0,0,0,0.8);
+    background-color: rgba(0,0,0,0.2);
     z-index: 2;
-    cursor: pointer;
-    color: white;
+    color: #ecf0f1;
   }
 
-  #more-menu-overlay {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0.0,0.0,0,0.0);
-    z-index: 2;
-  }
-
-  .overlay.on {
-    display: block;
-  }
+.overlay.on {
+  display: block;
+}
   
-  .overlay.off {
-    display: none;
-  }
+.overlay.off {
+  display: none;
+}
 
-  .vcontainer {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-content: center;
-    align-items: center;
-    overflow:auto;
-    font-size: 45px;
-  }
+#overlay-close {
+  font-family: 'Lato', sans-serif;
+  font-size: max(3vw, 24px);
+  position: absolute;
+  top: max(1vw, 8px);
+  right: max(0.5vw, 2px);
+  cursor: pointer;
+}
 
-  .hcontainer {
-    width: 80%;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items:center;
-  }
+#overlay-close:hover {
+  color: #f39c12;
+}
 
-  .hcontainer.chart-title {
-    background-color: blue;
-    border: 1px solid black;
-  }
+#overlay-close:active {
+  color: #f39c12;
+}
 
-  .hcontainer.chart-tracks {
-    background-color: red;
-    border: 1px solid black;
-  }
+#more-menu-overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0.0,0.0,0,0.0);
+  z-index: 2;
+}
 
-  .item-state {
-    width: 15%;
-  }
+.vcontainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  align-items: center;
+  overflow:auto;
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
 
-  .item-title {
-    width:35%;
-  }
+/* Hide scrollbar for Chrome, Safari and Opera */
+.vcontainer::-webkit-scrollbar {
+  display: none;
+}
 
-  .item-artist {
-    width:35%;
-  }
+.hcontainer {
+  width: 90%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items:center;
+}
 
-  .item-more {
-    width: 15%;
-  }
+.hcontainer.chart-title {
+  background-color: #c0392b;
+  padding-top: max(1vw, 8px);
+  padding-bottom: max(1vw, 8px);
+  margin-bottom: max(1vw, 8px);
+  font-family: 'Zen Dots', cursive;
+  font-size: max(1.5vw, 12px); /*30px*/;
+}
 
-  .hidden {
-    display: none;
-  }
+.chart-title .item-state {
+  font-size: max(2vw, 16px);
+}
+
+.chart-title-text {
+  width:80%;
+}
+
+.chart-title-text h1 {
+  text-align: center;
+}
+
+.hcontainer.chart-tracks-header {
+  color: #7f8c8d;
+  background-color: #2c3e50;
+  opacity: 0.9;
+  border-bottom: 1px solid #7f8c8d;
+  font-family: 'Lato', sans-serif;
+  font-size: max(1vw, 12px);
+  padding-top: max(0.5vw, 4px);
+  padding-bottom: max(0.5vw, 4px);
+}
+
+.hcontainer.chart-tracks {
+  color: var(--spotify-white);
+  background-color: #2c3e50;
+  opacity: 0.6;
+  border-bottom: 1px solid #7f8c8d;
+  font-family: 'Lato', sans-serif;
+  font-size: max(1.25vw, 14px);
+}
+
+.hcontainer.chart-tracks:hover {
+  opacity: 1.0;
+}
+
+.hcontainer.chart-tracks.playing {
+  color: #2ecc71;
+  opacity: 0.9;
+}
+
+.hcontainer.chart-tracks.playing:hover {
+  opacity: 1.0;
+}
+
+.item-state {
+  width: 10%;
+  text-align: center;
+}
+
+.item-state img {
+  width: max(2.5vw, 30px);
+  height: max(2.5vw, 30px);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.item-title {
+  width:40%;
+  cursor: default;
+}
+
+.item-spacing {
+  width:10%;
+}
+
+.item-artist {
+  width:30%;
+  cursor: default;
+}
+
+.item-title.padded {
+  padding-top: max(1vw, 12px);
+  padding-bottom: max(1vw, 12px);
+}
+
+.item-more {
+  width: 10%;
+  text-align: center;
+}
+
+.item-more img {
+  width: max(1.25vw, 15px);
+  height: max(1.25vw, 15px);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.hidden {
+  display: none;
+}

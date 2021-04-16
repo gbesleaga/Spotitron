@@ -12,6 +12,7 @@ interface DisplayChartTitle {
   showState: boolean;
 
   following: 'yes' | 'no' | 'unknown';
+  followingText: '❤' | '';
 }
 
 interface DisplayTrack {
@@ -37,7 +38,7 @@ export class CountryViewComponent implements OnInit {
   show: boolean = false;
   chartName: string = "";
   displayTracks: DisplayTrack[] = [];
-  displayChartTitle: DisplayChartTitle = {showState: false, following: 'unknown'};
+  displayChartTitle: DisplayChartTitle = {showState: false, following: 'unknown', followingText: ''};
 
   currentlyPlayingTrackIndex: number = -1;
 
@@ -68,6 +69,7 @@ export class CountryViewComponent implements OnInit {
           this.show = true;
           this.chartName = this.countryChart.name;
           this.displayChartTitle.following = 'unknown';
+          this.displayChartTitle.followingText = '';
 
           this.displayTracks = [];
           const tracks: SpotifyPlaylistTrackObject[] = this.countryChart.tracks.items as SpotifyPlaylistTrackObject[];
@@ -84,6 +86,10 @@ export class CountryViewComponent implements OnInit {
 
             this.displayTracks.push(dt);
           }
+
+          // get following state
+          this.getChartFollowingState();  
+
         } else {
           this.onLeaveView();
         }
@@ -111,35 +117,37 @@ export class CountryViewComponent implements OnInit {
         });
   }
 
+  private getChartFollowingState() {
+    this.spotifyService.getUserId({accessToken: this.authService.getAccessToken()}).subscribe(
+      user => {
+        this.spotifyService.areFollowingPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id, userIds: [user.id]}).subscribe(
+          response => {
+            if (response[0] === true) {
+              this.displayChartTitle.following = 'yes'
+              this.displayChartTitle.followingText = '❤';
+            } else {
+              this.displayChartTitle.following = 'no';
+              this.displayChartTitle.followingText = '';
+            }
+          },
+          err => {
+            console.log("Failed to retrieve follow state!");
+            console.log(err);
+          }
+        )
+      },
+      err => {
+        console.log("Failed to retrieve user id!");
+        console.log(err);
+      }
+    );
+  }
+
   ngOnInit(): void {
   }
 
   onChartTitleHoverEnter() {
-    if (this.displayChartTitle.following === 'unknown' && this.countryChart) {
-      this.spotifyService.getUserId({accessToken: this.authService.getAccessToken()}).subscribe(
-        user => {
-          this.spotifyService.areFollowingPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id, userIds: [user.id]}).subscribe(
-            response => {
-              if (response[0] === true) {
-                this.displayChartTitle.following = 'yes'
-              } else {
-                this.displayChartTitle.following = 'no';
-              }
-              this.displayChartTitle.showState = true;
-            },
-            err => {
-              console.log("Failed to retrieve follow state!");
-              console.log(err);
-            }
-          )
-        },
-        err => {
-          console.log("Failed to retrieve user id!");
-          console.log(err);
-        });
-    } else {
-      this.displayChartTitle.showState = true;
-    }
+    this.displayChartTitle.showState = true;
   }
 
   onChartTitleHoverLeave() {
@@ -218,7 +226,7 @@ export class CountryViewComponent implements OnInit {
     this.showMenu = true;
 
     if (this.showMenu) {
-      this.prepareChartMenu(e.pageY + 20, e.pageX);
+      this.prepareChartMenu(e.pageY + 10, e.pageX - 150 - 10);
     }
   }
 
@@ -228,7 +236,13 @@ export class CountryViewComponent implements OnInit {
     this.showMenu = true;
 
     if (this.showMenu) {
-      this.prepareTrackMenu(index, e.pageY + 20, e.pageX);
+      // should always be enough space to the left
+      const posLeft = e.pageX - 150 - 10; 
+
+      // pop bottom if enough space, otherwise pop top
+      const posTop = ((window.innerHeight - e.pageY - 20 - 50) > 0)? e.pageY + 10: e.pageY - 50;
+
+      this.prepareTrackMenu(index, posTop, posLeft);
     }
   }
 
@@ -258,9 +272,11 @@ export class CountryViewComponent implements OnInit {
           this.spotifyService.followPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id}).subscribe(
             () => {
               this.displayChartTitle.following = 'yes';
+              this.displayChartTitle.followingText = '❤';
             },
             err => {
               this.displayChartTitle.following = 'unknown';
+              this.displayChartTitle.followingText = '';
               console.log("Failed to follow!")
               console.log(err);
             }
@@ -277,9 +293,11 @@ export class CountryViewComponent implements OnInit {
           this.spotifyService.unfollowPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id}).subscribe(
             () => {
               this.displayChartTitle.following = 'no';
+              this.displayChartTitle.followingText = '';
             },
             err => {
               this.displayChartTitle.following = 'unknown';
+              this.displayChartTitle.followingText = '';
               console.log("Failed to unfollow!")
               console.log(err);
             }
@@ -329,13 +347,6 @@ export class CountryViewComponent implements OnInit {
     const children = [];
 
     items.push({
-      text: 'Save to your Liked Songs', 
-      action: () => {
-        console.log("Saved to your Liked Songs");
-      }
-    });
-
-    items.push({
       text: 'Add to Playlist ...',
       submenuIndex: 0
     });
@@ -344,7 +355,7 @@ export class CountryViewComponent implements OnInit {
 
     for (let p of this.playlistsOfCurrentUser) {
       playlistMenuItems.push({
-        text: p.name,
+        text: p.name.substr(0, 38),
         action: () => {
           //console.log(p.name);
           const trackId = (this.countryChart?.tracks.items[trackIndex] as SpotifyPlaylistTrackObject).track.id;
@@ -370,10 +381,21 @@ export class CountryViewComponent implements OnInit {
       });
     }
 
+    // where to place submenu
+    let submenuTop = -1;
+
+    if (posTop < (window.innerHeight / 2)) {
+      submenuTop = 20;
+    } else {
+      submenuTop = -20 - playlistMenuItems.length * 40;
+    }
+    
+    const submenuLeft = 0;
+
     const addToPlaylistMenu = {
       show: false,
-      top: 25,
-      left: -200,
+      top: submenuTop,
+      left: -150, //TODO this is hardcoded to menu width
       items: playlistMenuItems,
       children: []
     }
@@ -397,6 +419,13 @@ export class CountryViewComponent implements OnInit {
   onLeaveView() {
     this.show = false;
     this.countrySelectionService.clearSelection();
+    this.pauseActiveTrack();
+
+    // reset scroll
+    const container = document.getElementById("tracks-container");
+    if (container) {
+      container.scrollTop = 0;
+    } 
   }
 
   private getDisplayTrackName(track: SpotifyTrackObject) {

@@ -22,9 +22,10 @@ function instanceOfPlaceholderMenuItem(object: any): object is PlaceholderMenuIt
 
 export interface Menu {
   show: boolean;
-  top: number; //px
+  top?: number; //px
   left?: number; //px
   right?: number; //px
+  bottom?: number; //px;
   items: MenuItem[];
   children: Menu[];
 }
@@ -42,7 +43,7 @@ export interface MenuDisplayer {
 export class ContextMenuComponent implements OnInit, MenuDisplayer {
   @Input() menu: Menu = {show: false, top: 0, left: 0, items: [], children: []};
 
-  activeSubmenuIndex: number = -1;
+  activeItem: PlaceholderMenuItem | undefined = undefined;
   
   constructor() { }
 
@@ -61,13 +62,14 @@ export class ContextMenuComponent implements OnInit, MenuDisplayer {
   submenuOpen(item: MenuItem, e: MouseEvent) {
     e.stopPropagation();
     
-    if (this.activeSubmenuIndex >= 0) {
-      this.menu.children[this.activeSubmenuIndex].show = false;
+    if (this.activeItem) {
+      this.menu.children[this.activeItem.submenuIndex].show = false;
+      this.activeItem = undefined;
     }
 
     if (instanceOfPlaceholderMenuItem(item)) {
       this.menu.children[item.submenuIndex].show = true;
-      this.activeSubmenuIndex = item.submenuIndex;
+      this.activeItem = item;
     }
   }
 }

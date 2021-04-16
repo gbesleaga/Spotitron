@@ -1,16 +1,20 @@
-<div [ngClass]="('overlay ' + (show? 'on' : 'off'))" (click)="onLeaveView()">
+<div [ngClass]="('overlay ' + (show? 'on' : 'off'))" >
     <div [ngClass]="((showMenu? '' : 'hidden'))"  id="more-menu-overlay" (click)="closeMoreMenu($event)">
         <ng-template contextMenuHost></ng-template>
+    </div>
+
+    <div id="overlay-close" (click)="onLeaveView()">
+        X
     </div>
 
     <div class="vcontainer">
         <div class="hcontainer chart-title" (pointerenter)="onChartTitleHoverEnter()" (pointerleave)="onChartTitleHoverLeave()">
             <div class="item-state">
-                <p [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" >
-                    F: {{displayChartTitle.following}}
-                </p>
+                <p> {{displayChartTitle.followingText}} </p>
             </div>
-            <h1>{{chartName}}</h1>
+            <div class="chart-title-text">
+                <h1>{{chartName}}</h1>
+            </div>
             <div class="item-more">
                 <img 
                 [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" 
@@ -20,25 +24,32 @@
             </div> 
         </div>
 
-        <div class="hcontainer chart-tracks"  *ngFor="let track of displayTracks; let i = index" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
-            <div class="item-state">
-                <img 
-                    [ngClass]="((track.showState? '' : 'hidden'))" 
-                    src="/assets/images/buttons/{{track.stateDisplay}}.png" 
-                    width="40" height="40"
-                    (click)="togglePlay(i, $event)">
+        <div class="hcontainer chart-tracks-header">
+            <div class="item-state"></div>
+            <div class="item-title">TITLE</div>
+            <div class="item-spacing"> </div>
+            <div class="item-artist">ARTIST</div>
+            <div class="item-more"></div>
+        </div>
+
+        <div class="vcontainer" id="tracks-container">
+            <div *ngFor="let track of displayTracks; let i = index" [ngClass]="('hcontainer chart-tracks ' + (track.playing? 'playing' : ''))" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
+                <div class="item-state">
+                    <img 
+                        [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 
+                        src="/assets/images/buttons/{{track.stateDisplay}}.png" 
+                        (click)="togglePlay(i, $event)">
+                </div>
+                <div class="item-title padded">{{track.name}}</div>
+                <div class="item-spacing"> </div>
+                <div class="item-artist padded">{{track.artist}}</div>
+                <div class="item-more">
+                    <img 
+                    [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 
+                    src="/assets/images/buttons/more.png"
+                    (click)="openTrackMoreMenu(i, $event)">
+                </div> 
             </div>
-            <div class="item-title-img"></div>
-            <div class="item-title">{{track.name}}</div>
-            <div class="item-artist-image"></div>
-            <div class="item-artist">by {{track.artist}}</div>
-            <div class="item-more">
-                <img 
-                [ngClass]="((track.showState? '' : 'hidden'))" 
-                src="/assets/images/buttons/more.png" 
-                width="40" height="40"
-                (click)="openTrackMoreMenu(i, $event)">
-            </div> 
         </div>
     </div>
 </div>

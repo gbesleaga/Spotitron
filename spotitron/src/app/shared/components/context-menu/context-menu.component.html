@@ -1,5 +1,5 @@
-<div class="context-menu" [style]="(menu.show?'':'display:none;') + ' top: ' + menu.top + 'px;' + (menu.left!== undefined?'left: ' + menu.left + 'px' :'') + (menu.right!== undefined?'right: ' + menu.right + 'px' :'')">
-    <div *ngFor="let item of menu.items; let itemIndex = index" (click)="menuAction(item, $event)" (pointerenter)='submenuOpen(item, $event)'>
+<div class="context-menu" [style]="(menu.show?'':'display:none;') + (menu.top!== undefined?' top: ' + menu.top + 'px;' :'') + (menu.bottom!== undefined?' bottom: ' + menu.bottom + 'px;' :'') + (menu.left!== undefined?' left: ' + menu.left + 'px;' :'') + (menu.right!== undefined?'right: ' + menu.right + 'px;' :'')">
+    <div [ngClass]="('context-menu-item ' + (item===activeItem? 'selected':''))" *ngFor="let item of menu.items; let itemIndex = index" (click)="menuAction(item, $event)" (pointerenter)='submenuOpen(item, $event)'>
         <p>{{item.text}}</p>
     </div>
     <div *ngFor="let menu of menu.children">
