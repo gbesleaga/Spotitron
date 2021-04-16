@@ -22,9 +22,10 @@ function instanceOfPlaceholderMenuItem(object: any): object is PlaceholderMenuIt
 
 export interface Menu {
   show: boolean;
-  top: number; //px
+  top?: number; //px
   left?: number; //px
   right?: number; //px
+  bottom?: number; //px;
   items: MenuItem[];
   children: Menu[];
 }

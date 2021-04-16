@@ -226,7 +226,7 @@ export class CountryViewComponent implements OnInit {
     this.showMenu = true;
 
     if (this.showMenu) {
-      this.prepareChartMenu(e.pageY + 20, e.pageX);
+      this.prepareChartMenu(e.pageY + 10, e.pageX - 150 - 10);
     }
   }
 
@@ -236,7 +236,13 @@ export class CountryViewComponent implements OnInit {
     this.showMenu = true;
 
     if (this.showMenu) {
-      this.prepareTrackMenu(index, e.pageY + 20, e.pageX);
+      // should always be enough space to the left
+      const posLeft = e.pageX - 150 - 10; 
+
+      // pop bottom if enough space, otherwise pop top
+      const posTop = ((window.innerHeight - e.pageY - 20 - 50) > 0)? e.pageY + 10: e.pageY - 50;
+
+      this.prepareTrackMenu(index, posTop, posLeft);
     }
   }
 
@@ -349,7 +355,7 @@ export class CountryViewComponent implements OnInit {
 
     for (let p of this.playlistsOfCurrentUser) {
       playlistMenuItems.push({
-        text: p.name,
+        text: p.name.substr(0, 38),
         action: () => {
           //console.log(p.name);
           const trackId = (this.countryChart?.tracks.items[trackIndex] as SpotifyPlaylistTrackObject).track.id;
@@ -375,10 +381,21 @@ export class CountryViewComponent implements OnInit {
       });
     }
 
+    // where to place submenu
+    let submenuTop = -1;
+
+    if (posTop < (window.innerHeight / 2)) {
+      submenuTop = 20;
+    } else {
+      submenuTop = -20 - playlistMenuItems.length * 40;
+    }
+    
+    const submenuLeft = 0;
+
     const addToPlaylistMenu = {
       show: false,
-      top: 25,
-      left: -200, //TODO this is hardcoded to menu width
+      top: submenuTop,
+      left: -150, //TODO this is hardcoded to menu width
       items: playlistMenuItems,
       children: []
     }
