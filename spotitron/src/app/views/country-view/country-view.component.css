@@ -21,10 +21,10 @@
 
 #overlay-close {
   font-family: 'Lato', sans-serif;
-  font-size: 60px;
+  font-size: max(3vw, 24px);
   position: absolute;
-  top: 20px;
-  right:80px;
+  top: max(1vw, 8px);
+  right: max(0.5vw, 2px);
   cursor: pointer;
 }
 
@@ -68,7 +68,7 @@
 }
 
 .hcontainer {
-  width: 80%;
+  width: 90%;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
@@ -77,16 +77,15 @@
 
 .hcontainer.chart-title {
   background-color: #c0392b;
-  /*border-bottom: 1px solid black;*/
-  padding-top: 20px;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
+  padding-top: max(1vw, 8px);
+  padding-bottom: max(1vw, 8px);
+  margin-bottom: max(1vw, 8px);
   font-family: 'Zen Dots', cursive;
-  font-size: 30px;
+  font-size: max(1.5vw, 12px); /*30px*/;
 }
 
 .chart-title .item-state {
-  font-size: 40px;
+  font-size: max(2vw, 16px);
 }
 
 .chart-title-text {
@@ -103,9 +102,9 @@
   opacity: 0.9;
   border-bottom: 1px solid #7f8c8d;
   font-family: 'Lato', sans-serif;
-  font-size: 20px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  font-size: max(1vw, 12px);
+  padding-top: max(0.5vw, 4px);
+  padding-bottom: max(0.5vw, 4px);
 }
 
 .hcontainer.chart-tracks {
@@ -114,7 +113,7 @@
   opacity: 0.6;
   border-bottom: 1px solid #7f8c8d;
   font-family: 'Lato', sans-serif;
-  font-size: 25px;
+  font-size: max(1.25vw, 14px);
 }
 
 .hcontainer.chart-tracks:hover {
@@ -136,25 +135,29 @@
 }
 
 .item-state img {
-  width: 50px;
-  height: 50px;
+  width: max(2.5vw, 30px);
+  height: max(2.5vw, 30px);
   cursor: pointer;
   vertical-align: middle;
 }
 
 .item-title {
-  width:45%;
+  width:40%;
   cursor: default;
 }
 
+.item-spacing {
+  width:10%;
+}
+
 .item-artist {
-  width:35%;
+  width:30%;
   cursor: default;
 }
 
 .item-title.padded {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: max(1vw, 12px);
+  padding-bottom: max(1vw, 12px);
 }
 
 .item-more {
@@ -163,8 +166,8 @@
 }
 
 .item-more img {
-  width: 25px;
-  height: 25px;
+  width: max(1.25vw, 15px);
+  height: max(1.25vw, 15px);
   cursor: pointer;
   vertical-align: middle;
 }
