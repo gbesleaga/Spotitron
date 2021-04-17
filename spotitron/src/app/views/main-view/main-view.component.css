@@ -1,5 +1,16 @@
 .logout {
     position: absolute;
-    top: 100px;
-    left: 100px;
+    bottom: 0;
+    right: 0;
+    margin-right: max(1vw, 5px); /*20px*/
+    margin-bottom: max(1vw, 5px);
+}
+
+.logout .spotify-text {
+    display: none;
+    overflow: hidden;
+}
+
+.logout:hover .spotify-text {
+    display: inline-block;
 }
