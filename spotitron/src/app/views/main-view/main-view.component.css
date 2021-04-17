@@ -4,11 +4,17 @@
     right: 0;
     margin-right: max(1vw, 5px); /*20px*/
     margin-bottom: max(1vw, 5px);
+    opacity: 0.3;
 }
+
 
 .logout .spotify-text {
     display: none;
     overflow: hidden;
+}
+
+.logout:hover {
+    opacity: 1.0;
 }
 
 .logout:hover .spotify-text {
