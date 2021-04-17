@@ -3,18 +3,22 @@ import { Subject } from "rxjs";
 
 @Injectable({providedIn: 'root'})
 export class CountrySelectionService {
-
-    //private countrySelected = false;
-    //private country: string = "";
-
+    private countryHoveredSubject: Subject<string> =  new Subject();
     private countrySelectedSubject: Subject<string> = new Subject();
     private clearSelectionSubject: Subject<void> = new Subject(); 
 
-    selectCountry(country: string) {
-        
-        //this.country = country;
 
+    hoverCountry(country: string) {
+        this.countryHoveredSubject.next(country);
+    }
+
+    selectCountry(country: string) {
+        this.countryHoveredSubject.next("");
         this.countrySelectedSubject.next(country);
+    }
+
+    getHoveredCountry() {
+        return this.countryHoveredSubject.asObservable();
     }
 
     getSelectedCountry() {

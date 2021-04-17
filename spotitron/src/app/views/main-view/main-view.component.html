@@ -1,4 +1,8 @@
 <app-country-view></app-country-view>
-<div class="logout">
-    <button (click)="onLogout()">Logout</button>
+<div class="spotify-auth no-select logout" (click)="onLogout()">
+    <img id="spotify-icon" src="/assets/images/spotify.png" alt="Spotify Icon">
+    <p class="spotify-text">Logout</p>
+</div>
+<div class="country-name">
+    <p>{{hoveredCountry}}</p>
 </div>

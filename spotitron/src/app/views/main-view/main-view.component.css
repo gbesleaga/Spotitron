@@ -1,5 +1,35 @@
 .logout {
     position: absolute;
-    top: 100px;
-    left: 100px;
+    bottom: 0;
+    right: 0;
+    margin-right: max(1vw, 5px); /*20px*/
+    margin-bottom: max(1vw, 5px);
+    opacity: 0.3;
+}
+
+
+.logout .spotify-text {
+    display: none;
+    overflow: hidden;
+}
+
+.logout:hover {
+    opacity: 1.0;
+}
+
+.logout:hover .spotify-text {
+    display: inline-block;
+}
+
+.country-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin-left: max(1vw, 5px);
+    margin-bottom: max(1vw, 5px);
+    opacity: 1.0;
+
+    color: #f1c40f;
+    font-size: 20px;
+    font-family: 'Zen Dots', cursive;
 }
