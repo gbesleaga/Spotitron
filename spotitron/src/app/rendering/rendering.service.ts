@@ -43,16 +43,6 @@ const ACCELERATION = 0.5;
 @Injectable({providedIn: 'root'})
 export class RenderingService {
 
-    constructor(
-        private countryDataService: CountryDataService,
-        private countrySelectionService: CountrySelectionService) {
-            this.countrySelectionService.onClearSelection().subscribe( () => {
-                this.deselectCountry();
-            });
-
-            console.log("rendering service constructed!");
-    }
-
     countrySelected: boolean = false;
     selectedCountryName: string = "";
 
@@ -121,6 +111,27 @@ export class RenderingService {
     ]);
 
     private countryAnimations: Map<string, Animation> = new Map();
+
+    // user input
+    private onMouseDownBinding: (e: MouseEvent) => void;
+    private onMouseUpBinding: (e: MouseEvent) => void;
+    private onMouseMoveBinding: (e: MouseEvent) => void;
+    private onWheelBinding: (e: WheelEvent) => void;
+
+    constructor(
+        private countryDataService: CountryDataService,
+        private countrySelectionService: CountrySelectionService) {
+            this.countrySelectionService.onClearSelection().subscribe( () => {
+                this.deselectCountry();
+            });
+
+            console.log("rendering service constructed!");
+
+            this.onMouseDownBinding = this.onMouseDown.bind(this);
+            this.onMouseUpBinding = this.onMouseUp.bind(this);
+            this.onMouseMoveBinding = this.onMouseMove.bind(this);
+            this.onWheelBinding = this.onWheel.bind(this);
+    }
 
     public init()
     {
@@ -339,10 +350,7 @@ export class RenderingService {
         }
 
         // event listening
-        this.renderer.domElement.addEventListener('pointerdown', (e) => this.onMouseDown(e));
-        this.renderer.domElement.addEventListener('pointermove', (e) => this.onMouseMove(e));
-        this.renderer.domElement.addEventListener('pointerup', (e) =>   this.onMouseUp(e));
-        this.renderer.domElement.addEventListener('wheel', (e) =>   this.onWheel(e));
+        this.enableUserInput();
     }
 
     public hideGlobe() {
@@ -350,6 +358,20 @@ export class RenderingService {
         if (this.controls) {
             this.controls.enabled = false;
         }
+    }
+
+    public enableUserInput() {
+        this.renderer.domElement.addEventListener('pointerdown', this.onMouseDownBinding);
+        this.renderer.domElement.addEventListener('pointermove', this.onMouseMoveBinding);
+        this.renderer.domElement.addEventListener('pointerup', this.onMouseUpBinding);
+        this.renderer.domElement.addEventListener('wheel', this.onWheelBinding);
+    }
+
+    public disableUserInput() {
+        this.renderer.domElement.removeEventListener('pointerdown', this.onMouseDownBinding);
+        this.renderer.domElement.removeEventListener('pointermove', this.onMouseMoveBinding);
+        this.renderer.domElement.removeEventListener('pointerup', this.onMouseUpBinding);
+        this.renderer.domElement.removeEventListener('wheel', this.onWheelBinding);
     }
 
     public render() {
@@ -549,6 +571,9 @@ export class RenderingService {
             countryObj.visible = false;
             countryObjExtrude.visible = true;
 
+            //disable user input
+            this.disableUserInput();
+
             // start country extrude animation
             const animation = this.countryAnimations.get(country);
 
@@ -605,6 +630,7 @@ export class RenderingService {
     }
 
     public deselectCountry() {
+
         // reverse country extrude animation
         const animation = this.countryAnimations.get(this.selectedCountryName);
 
@@ -640,6 +666,9 @@ export class RenderingService {
                 this.cameraAnimating = false;
                 this.controls?.update();
 
+                //enable user input
+                this.enableUserInput();
+                
                 for (let i = 0; i < this.activeAnimations.length; ++i) {
                     if (this.activeAnimations[i].action === e.action) {
                         this.activeAnimations.splice(i, 1);
