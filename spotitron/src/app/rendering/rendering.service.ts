@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
-import { AnimationAction, AnimationClip, AnimationMixer, Clock, VectorKeyframeTrack } from 'three';
+import { AnimationAction, AnimationClip, AnimationMixer, Clock, Vector3, VectorKeyframeTrack } from 'three';
 import { OrbitControls } from 'three-orbitcontrols-ts';
 
 import { CountryDataService } from '../shared/country-data.service';
@@ -89,7 +89,7 @@ export class RenderingService {
     // camera dolly
     private cameraDollySpeed = 10;
     private cameraDollyOutMaxDist = 0;
-    private cameraDollyInMaxDist = 450; // manually tested, might need to be adjusted if initial position is changed
+    private cameraDollyInMaxDist = 450; // manually tested, might need to be adjusted if initial position is changed 
 
     // user input
     private mousePressed: boolean = false;
@@ -101,6 +101,7 @@ export class RenderingService {
     private clock = new Clock();
     private activeAnimations: Animation[] = [];
     private cameraAnimating: boolean = false;
+    private cameraDollyUser = -1; // distance the user was before auto dolly animation
 
     // country extrude animation
     private countryExtrudeClip = new AnimationClip('extrude', -1, [
@@ -560,6 +561,7 @@ export class RenderingService {
 
             // move camera above country
             this.cameraAnimating = true;
+            this.cameraDollyUser = this.camera.position.distanceTo(this.globe.position);
             this.selectedCountryName = country;
 
             const center = this.getCenterPointOfMesh(countryObj as THREE.Mesh);
@@ -615,6 +617,45 @@ export class RenderingService {
         
         this.countrySelected = false;
         this.selectedCountryName = "";
+
+        if (this.cameraDollyUser > 0) {
+            // move camera back to user defined distance
+            this.cameraAnimating = true;
+
+            let newCameraPosition = this.camera.position.clone();
+            newCameraPosition.sub(this.globe.position);
+            newCameraPosition.normalize();
+            newCameraPosition.multiplyScalar(this.cameraDollyUser);
+
+            const cameraMoveClip = new AnimationClip('move-back-n-look', -1, [
+                new VectorKeyframeTrack(
+                    '.position',
+                    [0, 1],     // times
+                    [this.camera.position.x, this.camera.position.y, this.camera.position.z, newCameraPosition.x, newCameraPosition.y, newCameraPosition.z]  // values
+                )
+            ]);
+
+            const mixer = new AnimationMixer(this.camera);
+            mixer.addEventListener('finished', (e) => {
+                this.cameraAnimating = false;
+                this.controls?.update();
+
+                for (let i = 0; i < this.activeAnimations.length; ++i) {
+                    if (this.activeAnimations[i].action === e.action) {
+                        this.activeAnimations.splice(i, 1);
+                        break;
+                    }
+                }
+            });
+
+            const action = mixer.clipAction(cameraMoveClip);
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
+
+            this.activeAnimations.push({mixer: mixer, action: action, reverseAction: undefined});
+
+            action.play();
+        }
     }
 
     private getCenterPointOfMesh(mesh: THREE.Mesh) {
