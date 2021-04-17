@@ -490,8 +490,10 @@ export class RenderingService {
 
                 if (country) {
                     this.outlinePass.selectedObjects = [country];
+                    this.countrySelectionService.hoverCountry(country.name);
                 } else {
                     this.outlinePass.selectedObjects = [];
+                    this.countrySelectionService.hoverCountry("");
                 }
             }
         }
@@ -507,6 +509,7 @@ export class RenderingService {
                 this.selectCountry(country.name);
                 if (this.outlinePass) {
                     this.outlinePass.selectedObjects = [country];
+                    this.countrySelectionService.hoverCountry(country.name);
                 }   
             }
         }
@@ -630,7 +633,6 @@ export class RenderingService {
     }
 
     public deselectCountry() {
-
         // reverse country extrude animation
         const animation = this.countryAnimations.get(this.selectedCountryName);
 

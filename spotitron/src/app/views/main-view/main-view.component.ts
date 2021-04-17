@@ -1,10 +1,12 @@
-import { AfterViewInit } from '@angular/core';
+import { AfterViewInit, OnDestroy } from '@angular/core';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from 'spotify-lib';
 
 import { RenderingService, StarfieldState } from 'src/app/rendering/rendering.service';
 import { CountryDataService } from 'src/app/shared/country-data.service';
+import { CountrySelectionService } from 'src/app/shared/country-selection.service';
 
 
 
@@ -13,10 +15,14 @@ import { CountryDataService } from 'src/app/shared/country-data.service';
   templateUrl: './main-view.component.html',
   styleUrls: ['./main-view.component.css']
 })
-export class MainViewComponent implements AfterViewInit {
+export class MainViewComponent implements AfterViewInit, OnDestroy {
+
+  hoveredCountrySubscription: Subscription | undefined = undefined;
+  hoveredCountry: string = "";
 
   constructor(
     private countryDataService: CountryDataService,
+    private CountrySelectionService: CountrySelectionService,
     private renderingService: RenderingService,
     private authService: AuthService,
     private router: Router) {
@@ -25,6 +31,15 @@ export class MainViewComponent implements AfterViewInit {
   ngAfterViewInit(){
     this.renderingService.setStarfieldState(StarfieldState.Halt);
     this.renderingService.initGlobe(this.countryDataService.getChartData());
+    this.hoveredCountrySubscription = this.CountrySelectionService.getHoveredCountry().subscribe(country => {
+      this.hoveredCountry = country;
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.hoveredCountrySubscription) {
+      this.hoveredCountrySubscription.unsubscribe();
+    }
   }
 
   onLogout() {
