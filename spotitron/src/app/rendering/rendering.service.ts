@@ -59,7 +59,6 @@ export class RenderingService {
     private scene: THREE.Scene = new THREE.Scene();
     private camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera();
     private controls: OrbitControls | undefined = undefined;
-    // TODO add renderer to main view component
     private renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ antialias: true });
     private globe: THREE.Object3D = new THREE.Object3D();
     private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
@@ -140,7 +139,6 @@ export class RenderingService {
         this.scene.add(this.camera);
 
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        //this.renderer.setClearColor(0xff0000, 0);
 
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         if (canvasPlaceholder) {
@@ -195,9 +193,6 @@ export class RenderingService {
         this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
         this.composer.addPass(this.effectFXAA);
 
-        //const copyPass = new ShaderPass(new CopyShader);
-        //this.composer.addPass(copyPass);
-
         this.resize();
 
         window.addEventListener('resize', () => this.resize(), false);
@@ -219,18 +214,6 @@ export class RenderingService {
         
         let material = new THREE.MeshBasicMaterial({ color: 0x2c3e50 });
 
-    
-    /*
-        const globeTexture = this.textureLoader.load('/assets/images/globe6.jpg');
-        globeTexture.wrapS = globeTexture.wrapT = THREE.ClampToEdgeWrapping;
-        globeTexture.minFilter = globeTexture.magFilter = THREE.LinearFilter;
-        globeTexture.anisotropy = 4;
-
-        let material = new THREE.MeshBasicMaterial({
-            map: globeTexture
-        });
-        
-    */
         this.globe.add(new THREE.Mesh(geometry, material));
 
         //this.textureLoader.setCrossOrigin('*');
@@ -274,8 +257,7 @@ export class RenderingService {
                 if (playlistItems.length > 0) {
                     const nImages = playlistItems[0].track.album.images.length;
                     if (nImages) {
-                        //TODO which size do we want; we are picking largest here
-                        url = playlistItems[0].track.album.images[0].url;
+                        url = playlistItems[0].track.album.images[0].url; // picking largest size
                     }
                 }
             }
@@ -304,7 +286,6 @@ export class RenderingService {
             let cMesh = new THREE.Mesh(cGeometry, material);
             let cMeshExtrude = new THREE.Mesh(cGeometryExtrude, material);
             
-            //TODO are we smart about this or will everything be considered for rendering??
             cMesh.visible = true;
             cMeshExtrude.visible = false;
 

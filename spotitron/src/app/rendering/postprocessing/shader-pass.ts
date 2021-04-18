@@ -9,7 +9,6 @@ import {
 import { FullScreenQuad, Pass } from './pass';
 
 export class ShaderPass extends Pass {
-    //TODO any
     textureID: any;
     shader: any;
     uniforms: { [uniform: string]: IUniform } = {};
@@ -55,7 +54,7 @@ export class ShaderPass extends Pass {
 			this.fsQuad.render(renderer);
 		} else {
 			renderer.setRenderTarget(writeBuffer);
-			// TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+            
 			if (this.clear) {
                 renderer.clear(renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil);
             }

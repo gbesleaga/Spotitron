@@ -63,7 +63,7 @@ export class OutlinePass extends Pass {
 
     overlayMaterial: ShaderMaterial;
 
-    copyUniforms: any; //TODO type
+    copyUniforms: any;
     materialCopy: ShaderMaterial;
 
     _oldClearColor = new Color();

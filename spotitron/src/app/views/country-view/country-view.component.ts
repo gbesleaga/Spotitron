@@ -324,7 +324,6 @@ export class CountryViewComponent implements OnInit {
     componentRef.instance.menu.left = posLeft;
   }
 
-  //TODO do this once and then swap? might need another child to hold everything
   private prepareTrackMenu(trackIndex: number, posTop: number, posLeft: number) {
 
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
@@ -360,7 +359,6 @@ export class CountryViewComponent implements OnInit {
           //console.log(p.name);
           const trackId = (this.countryChart?.tracks.items[trackIndex] as SpotifyPlaylistTrackObject).track.id;
 
-          //TODO duplicates?
           this.spotifyService.addTracksToPlaylist({
             accessToken: this.authService.getAccessToken(),
             playlistId: p.id,
@@ -395,7 +393,7 @@ export class CountryViewComponent implements OnInit {
     const addToPlaylistMenu = {
       show: false,
       top: submenuTop,
-      left: -150, //TODO this is hardcoded to menu width
+      left: -150, //TODO this is hardcoded to menu width in css
       items: playlistMenuItems,
       children: []
     }
