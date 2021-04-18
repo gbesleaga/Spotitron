@@ -79,7 +79,6 @@ export class CountryDataService {
     
         let step = stop - at;
     
-        //TODO figure out how many requests we can send before we get timed-out; 30?
         if (step > this.parallelRequests) {
           step = this.parallelRequests;
         }

@@ -1103,7 +1103,6 @@ export class FXAAShader {
 		'    vec4(0.0)',
 		'  );',
 		'',
-		'  // TODO avoid querying texture twice for same texel',
 		'  gl_FragColor.a = texture2D(tDiffuse, vUv).a;',
 		'}'
 	].join('\n')
