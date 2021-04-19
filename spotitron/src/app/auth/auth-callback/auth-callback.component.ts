@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { SpotifyHttpClientService, AuthService } from 'spotify-lib';
 import { RenderingService, StarfieldState } from 'src/app/rendering/rendering.service';
 import { CountryDataService } from 'src/app/shared/country-data.service';
+import { SpotifyUserService } from 'src/app/shared/spotify-user.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -14,6 +15,11 @@ import { CountryDataService } from 'src/app/shared/country-data.service';
 export class AuthCallbackComponent implements OnInit, OnDestroy {
 
   loadingProgress = 0;
+
+  private userDataRdy = false;
+  private chartDataRdy = false;
+
+  private userDataReadySubscription: Subscription | undefined = undefined;
 
   private chartDataProgressSubscription: Subscription | undefined = undefined;
   private chartDataReadySubscription: Subscription | undefined = undefined;
@@ -25,18 +31,14 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private countryDataService: CountryDataService,
     private renderingService: RenderingService,
+    private spotifyUSerService: SpotifyUserService
     /*private notificationService: NotificationsService*/) { 
     }
 
     ngOnInit() {
       if (this.authService.isAuthenticated()) {
-        if (this.countryDataService.isChartDataReady()) {
-          this.router.navigate(['view/main']);
-          return;
-        } else {
-          this.loadCharts();
-          return;
-        }
+        this.load();
+        return;
       }
   
       const error: string = this.route.snapshot.queryParams.error;
@@ -78,7 +80,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
               console.log('Login failed.');
               this.router.navigate(['']);
             } else {
-              this.loadCharts();
+              this.load();
             }
           }, 
           err => {
@@ -86,6 +88,24 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
             console.log('Failed to obtain authentication token.');
             this.router.navigate(['']);
           });
+    }
+
+    private load() {
+      this.userDataRdy = this.spotifyUSerService.isReady();
+      this.chartDataRdy = this.countryDataService.isChartDataReady();
+
+      if (this.userDataRdy && this.chartDataRdy) {
+        this.router.navigate(['view/main']);
+        return;
+      }
+
+      if (!this.userDataRdy) {
+        this.loadUserData();
+      }
+
+      if (!this.chartDataRdy) {
+        this.loadCharts();
+      }
     }
   
     private isCallbackCodeValid(callbackCode: string) {
@@ -106,6 +126,18 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
       return false;
     }
 
+    private loadUserData() {
+      this.userDataReadySubscription = this.spotifyUSerService.fetchData().subscribe( succ => {
+        if (succ) {
+          this.userDataRdy = true;
+          this.onPartialLoad();
+        } else {
+          console.log("Failed to retrieve user data!");
+          this.router.navigate(['']);
+        }
+      });
+    }
+
     private loadCharts() {
       this.renderingService.setStarfieldState(StarfieldState.Hyper);
 
@@ -114,13 +146,25 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
       });
 
       this.chartDataReadySubscription = this.countryDataService.onChartDataReady().subscribe( () => {
-        this.router.navigate(['view/main']);
+        this.chartDataRdy = true;
+        this.onPartialLoad();
       });
 
       this.countryDataService.fetchChartData();
     }
 
+    private onPartialLoad() {
+      if (this.userDataRdy && this.chartDataRdy) {
+        this.router.navigate(['view/main']);
+        return;
+      }
+    }
+
     ngOnDestroy() {
+      if (this.userDataReadySubscription) {
+        this.userDataReadySubscription.unsubscribe();
+      }
+
       if (this.chartDataProgressSubscription) {
         this.chartDataProgressSubscription.unsubscribe();
       }
