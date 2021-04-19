@@ -46,6 +46,8 @@ export class RenderingService {
     countrySelected: boolean = false;
     selectedCountryName: string = "";
 
+    private selectableCountries: string[] = [];
+
     onCountrySelectedCallback: (() => void) | undefined = undefined;
 
     private sceneStarfield: THREE.Scene = new THREE.Scene();
@@ -234,13 +236,14 @@ export class RenderingService {
             new THREE.MeshBasicMaterial({ color: 0xe74c3c })
         );
 
-
         let countries: any = this.countryDataService.geometryData;
 
         let i = 0;
 
         // key is url for number 1 song cover
         const countryMaterials = new Map<string, THREE.ShaderMaterial>();
+
+        this.selectableCountries = [];
 
         for (let name in countries) {
             let cGeometry = new Map3DGeometry (countries[name], 2);
@@ -259,6 +262,8 @@ export class RenderingService {
                     if (nImages) {
                         url = playlistItems[0].track.album.images[0].url; // picking largest size
                     }
+
+                    this.selectableCountries.push(name); // country is selectable
                 }
             }
 
@@ -551,7 +556,7 @@ export class RenderingService {
         const countryObj = this.globe.getObjectByName(country);
         const countryObjExtrude = this.globe.getObjectByName(country + this.countryExtrudeSuffix);
 
-        if (countryObj && countryObjExtrude) {
+        if ((this.selectableCountries.indexOf(country) !== -1) && countryObj && countryObjExtrude) {
             countryObj.visible = false;
             countryObjExtrude.visible = true;
 
@@ -610,6 +615,8 @@ export class RenderingService {
             this.activeAnimations.push({mixer: mixer, action: action, reverseAction: undefined});
 
             action.play();
+        } else {
+            console.log("No chart data for country: " + country);
         }
     }
 
