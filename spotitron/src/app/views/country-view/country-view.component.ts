@@ -5,6 +5,7 @@ import { ContextMenuComponent, MenuDisplayer } from 'src/app/shared/components/c
 import { ContextMenuDirective } from 'src/app/shared/components/context-menu/context-menu.directive';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { CountrySelectionService } from 'src/app/shared/country-selection.service';
+import { SpotifyUserService } from 'src/app/shared/spotify-user.service';
 import { CountryChart } from 'src/app/shared/types';
 
 
@@ -58,9 +59,10 @@ export class CountryViewComponent implements OnInit {
     private countryDataService: CountryDataService,
     private componentFactoryResolver: ComponentFactoryResolver,
     private spotifyService: SpotifyHttpClientService,
-    private authService: AuthService) {
+    private authService: AuthService,
+    private spotifyUserService: SpotifyUserService) {
 
-      //TODO we should know user id at this point!!
+      this.playlistsOfCurrentUser = this.spotifyUserService.getUserOwnedPlaylists();
 
       this.countrySelectionService.getSelectedCountry().subscribe( country => {
         this.countryChart = this.countryDataService.getChartDataForCountry(country);
@@ -94,27 +96,6 @@ export class CountryViewComponent implements OnInit {
           this.onLeaveView();
         }
       });
-
-      // get playlists that current user owns
-      // TODO cleanup subscription?? (check others too!)
-      forkJoin({
-        userId: this.spotifyService.getUserId({ accessToken: this.authService.getAccessToken() }),
-        userPlaylists: this.spotifyService.getPlaylistsOfCurrentUser({ accessToken: this.authService.getAccessToken() })
-      })
-      .subscribe( 
-        response => {
-          let userId = response.userId.id;
-          let playlists = response.userPlaylists.items as SpotifySimplifiedPlaylistObject[];
-
-          for (let p of playlists) {
-            if (p.owner.id === userId) {
-              this.playlistsOfCurrentUser.push(p);
-            }
-          }
-        },
-        err => {
-          console.log(err);
-        });
   }
 
   private getChartFollowingState() {
