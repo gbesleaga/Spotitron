@@ -12,7 +12,7 @@ import { MainViewComponent } from './views/main-view/main-view.component';
 import { CountryViewComponent } from './views/country-view/country-view.component';
 import { ContextMenuComponent } from './shared/components/context-menu/context-menu.component';
 import { ContextMenuDirective } from './shared/components/context-menu/context-menu.directive';
-import { CountryDataGuardService } from './shared/country-data-guard.service';
+import { DataGuardService } from './shared/data-guard.service';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatProgressBarModule } from '@angular/material/progress-bar'
 
@@ -28,7 +28,7 @@ const appRoutes: Routes = [
   { 
     path: 'view/main', 
     component: MainViewComponent, 
-    canActivate: [AuthGuardService, CountryDataGuardService]
+    canActivate: [AuthGuardService, DataGuardService]
   },
   { 
     path: '**', 
