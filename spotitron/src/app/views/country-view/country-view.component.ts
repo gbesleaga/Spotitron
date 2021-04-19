@@ -99,29 +99,24 @@ export class CountryViewComponent implements OnInit {
   }
 
   private getChartFollowingState() {
-    this.spotifyService.getUserId({accessToken: this.authService.getAccessToken()}).subscribe(
-      user => {
-        this.spotifyService.areFollowingPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id, userIds: [user.id]}).subscribe(
-          response => {
-            if (response[0] === true) {
-              this.displayChartTitle.following = 'yes'
-              this.displayChartTitle.followingText = '❤';
-            } else {
-              this.displayChartTitle.following = 'no';
-              this.displayChartTitle.followingText = '';
-            }
-          },
-          err => {
-            console.log("Failed to retrieve follow state!");
-            console.log(err);
+    this.spotifyService.areFollowingPlaylist({
+      accessToken: this.authService.getAccessToken(), 
+      playlistId: this.countryChart!.id, 
+      userIds: [this.spotifyUserService.getUserId()]}).subscribe(
+        response => {
+          if (response[0] === true) {
+            this.displayChartTitle.following = 'yes'
+            this.displayChartTitle.followingText = '❤';
+          } else {
+            this.displayChartTitle.following = 'no';
+            this.displayChartTitle.followingText = '';
           }
-        )
-      },
-      err => {
-        console.log("Failed to retrieve user id!");
-        console.log(err);
-      }
-    );
+        },
+        err => {
+          console.log("Failed to retrieve follow state!");
+          console.log(err);
+        }
+      );
   }
 
   ngOnInit(): void {
