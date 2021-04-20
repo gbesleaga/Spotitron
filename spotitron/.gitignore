@@ -44,3 +44,10 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# firebase
+.firebaserc
+.firebase/
+
+# angular dev. environment
+src/environments/environment.ts
