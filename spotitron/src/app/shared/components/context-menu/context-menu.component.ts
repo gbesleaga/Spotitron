@@ -52,7 +52,6 @@ export class ContextMenuComponent implements OnInit, MenuDisplayer {
 
   menuAction(item: MenuItem, e: MouseEvent) {
     e.stopPropagation();
-    //console.log(item.id);
     
     if (instanceOfActionMenuItem(item)) {
       item.action();

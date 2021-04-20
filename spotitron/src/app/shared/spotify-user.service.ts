@@ -37,7 +37,6 @@ export class SpotifyUserService {
                     observer.next(true);
                 },
                 err => {
-                    console.log(err);
                     observer.next(false);
                 }
             );

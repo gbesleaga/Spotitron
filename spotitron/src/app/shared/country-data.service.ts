@@ -134,13 +134,6 @@ export class CountryDataService {
     }
 
     private setChartDataReady() {
-      for (let chart of this.chartData) {
-        //const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
-        //console.log(chart.country + " : " + playlistItems[0].track.name);
-        
-        //console.log(chart);
-      }
-
       this.chartDataReady = true;
 
       // store
@@ -164,7 +157,6 @@ export class CountryDataService {
       const elapsed = now.getTime() - chartDataTimestamp.getTime();
       
       if (elapsed > this.storageExpireAfterMS) {
-        console.log('data is old!');
         return false;
       }
 
@@ -182,15 +174,13 @@ export class CountryDataService {
     private storeChartData() {
       try {
         const storedData = JSON.stringify([...this.chartData]);
-        console.log(storedData.length);
         //TODO additional compression with lz-string?
         localStorage.setItem(this.storageKeyForChartData, storedData);
 
         const storedTimestamp = (new Date()).toString();
         localStorage.setItem(this.storageKeyForChartDataTimestamp, storedTimestamp);
-
       } catch (e) {
-        console.log("Failed to store charts: " + e.message);
+        // do nothing
       }
     }
 }

@@ -1,6 +1,7 @@
 import { ThrowStmt } from '@angular/compiler';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NotificationsService, NotificationType } from 'notifications-lib';
 import { Subscription } from 'rxjs';
 import { SpotifyHttpClientService, AuthService } from 'spotify-lib';
 import { RenderingService, StarfieldState } from 'src/app/rendering/rendering.service';
@@ -31,8 +32,8 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private countryDataService: CountryDataService,
     private renderingService: RenderingService,
-    private spotifyUSerService: SpotifyUserService
-    /*private notificationService: NotificationsService*/) { 
+    private spotifyUSerService: SpotifyUserService,
+    private notificationService: NotificationsService) { 
     }
 
     ngOnInit() {
@@ -44,8 +45,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
       const error: string = this.route.snapshot.queryParams.error;
   
       if (error) {
-        //this.notificationService.notify({type: NotificationType.ERROR, msg: 'Login failed. Reason: ' + error});
-        console.log('Login failed. Reason: ' + error);
+        this.notificationService.notify({type: NotificationType.ERROR, msg: 'Login failed. Reason: ' + error});
         this.router.navigate(['']);
         return;
       }
@@ -62,7 +62,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
       const code = this.authService.getCodeVerifier();
       if (!code) {
-        console.log('Failed to retrieve code verifier.');
+        this.notificationService.notify({type: NotificationType.ERROR, msg: 'Login failed. Reason: ' + 'Failed to retrieve code verifier.'});
         this.router.navigate(['']);
         return;
       }
@@ -76,16 +76,14 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
             const success = this.authService.authenticate(responseData);
   
             if (!success) {
-              //this.notificationService.notify({type: NotificationType.ERROR, msg: 'Login failed.'});
-              console.log('Login failed.');
+              this.notificationService.notify({type: NotificationType.ERROR, msg: 'Login failed.'});
               this.router.navigate(['']);
             } else {
               this.load();
             }
           }, 
           err => {
-            //this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to obtain authentication token.'});
-            console.log('Failed to obtain authentication token.');
+            this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to obtain authentication token.'});
             this.router.navigate(['']);
           });
     }
@@ -132,7 +130,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
           this.userDataRdy = true;
           this.onPartialLoad();
         } else {
-          console.log("Failed to retrieve user data!");
+          this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to retrieve user data.'});
           this.router.navigate(['']);
         }
       });

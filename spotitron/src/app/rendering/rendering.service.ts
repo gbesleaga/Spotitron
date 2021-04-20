@@ -16,6 +16,7 @@ import { OutlinePass } from './postprocessing/outline-pass';
 import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shader-pass';
 import { ClearPass } from './postprocessing/clear-pass';
+import { NotificationsService, NotificationType } from 'notifications-lib';
 
 interface Animation {
     mixer: AnimationMixer;
@@ -121,12 +122,11 @@ export class RenderingService {
 
     constructor(
         private countryDataService: CountryDataService,
-        private countrySelectionService: CountrySelectionService) {
+        private countrySelectionService: CountrySelectionService,
+        private notificationService: NotificationsService) {
             this.countrySelectionService.onClearSelection().subscribe( () => {
                 this.deselectCountry();
             });
-
-            console.log("rendering service constructed!");
 
             this.onMouseDownBinding = this.onMouseDown.bind(this);
             this.onMouseUpBinding = this.onMouseUp.bind(this);
@@ -222,8 +222,6 @@ export class RenderingService {
 
         const vs = document.getElementById("country-vs")?.textContent;
         const fs = document.getElementById("country-fs")?.textContent;
-
-        //console.log(vs);
 
         // country default materials
         this.countryDefaultMaterials.push(
@@ -616,7 +614,7 @@ export class RenderingService {
 
             action.play();
         } else {
-            console.log("No chart data for country: " + country);
+            this.notificationService.notify({type: NotificationType.INFO, msg: "No chart data for: " + country});
         }
     }
 
