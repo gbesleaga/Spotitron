@@ -1,4 +1,5 @@
 import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
+import { NotificationsService, NotificationType } from 'notifications-lib';
 import { forkJoin, Subscription } from 'rxjs';
 import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject, SpotifySimplifiedPlaylistObject, SpotifyTrackObject } from 'spotify-lib';
 import { ContextMenuComponent, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
@@ -60,7 +61,8 @@ export class CountryViewComponent implements OnInit {
     private componentFactoryResolver: ComponentFactoryResolver,
     private spotifyService: SpotifyHttpClientService,
     private authService: AuthService,
-    private spotifyUserService: SpotifyUserService) {
+    private spotifyUserService: SpotifyUserService,
+    private notificationService: NotificationsService) {
 
       this.playlistsOfCurrentUser = this.spotifyUserService.getUserOwnedPlaylists();
 
@@ -113,8 +115,7 @@ export class CountryViewComponent implements OnInit {
           }
         },
         err => {
-          console.log("Failed to retrieve follow state!");
-          console.log(err);
+          console.log("Failed to retrieve follow state.");
         }
       );
   }
@@ -226,7 +227,7 @@ export class CountryViewComponent implements OnInit {
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
 
     if (!this.contextMenuHost) {
-      console.log('cant find placeholder');
+      console.log('Failed to create chart context menu.');
       return;
     }
 
@@ -253,8 +254,8 @@ export class CountryViewComponent implements OnInit {
             err => {
               this.displayChartTitle.following = 'unknown';
               this.displayChartTitle.followingText = '';
-              console.log("Failed to follow!")
-              console.log(err);
+
+              this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to follow chart.'});
             }
           );
 
@@ -274,8 +275,7 @@ export class CountryViewComponent implements OnInit {
             err => {
               this.displayChartTitle.following = 'unknown';
               this.displayChartTitle.followingText = '';
-              console.log("Failed to unfollow!")
-              console.log(err);
+              this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to unfollow chart.'});
             }
           );
 
@@ -305,7 +305,7 @@ export class CountryViewComponent implements OnInit {
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
 
     if (!this.contextMenuHost) {
-      console.log('cant find placeholder');
+      console.log('Failed to create track context menu.');
       return;
     }
 
@@ -332,7 +332,6 @@ export class CountryViewComponent implements OnInit {
       playlistMenuItems.push({
         text: p.name.substr(0, 38),
         action: () => {
-          //console.log(p.name);
           const trackId = (this.countryChart?.tracks.items[trackIndex] as SpotifyPlaylistTrackObject).track.id;
 
           this.spotifyService.addTracksToPlaylist({
@@ -341,11 +340,10 @@ export class CountryViewComponent implements OnInit {
             trackIds: [trackId]
           }).subscribe(
             () => {
-              console.log("Track added to " + p.name);
+              this.notificationService.notify({type: NotificationType.INFO, msg: "Track added to " + p.name});
             },
             err => {
-              console.log("Failed to add track to " + p.name + " : ");
-              console.log(err);
+              this.notificationService.notify({type: NotificationType.ERROR, msg: "Failed to add track to " + p.name});
             }
           );
 

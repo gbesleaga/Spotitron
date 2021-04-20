@@ -46,7 +46,6 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   
       if (error) {
         this.notificationService.notify({type: NotificationType.ERROR, msg: 'Login failed. Reason: ' + error});
-        console.log('Login failed. Reason: ' + error);
         this.router.navigate(['']);
         return;
       }
@@ -131,7 +130,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
           this.userDataRdy = true;
           this.onPartialLoad();
         } else {
-          console.log("Failed to retrieve user data!");
+          this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to retrieve user data.'});
           this.router.navigate(['']);
         }
       });
