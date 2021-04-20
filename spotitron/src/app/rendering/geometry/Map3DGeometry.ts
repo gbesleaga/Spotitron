@@ -11,9 +11,7 @@ export interface CountryRenderData {
     polygons: number[][][]; // [[poly indices, hole i-s, ...], ...]
 }
 
-//TODO refactor
 export class Map3DGeometry extends THREE.BufferGeometry {
-    //TODO do we need innerRadius?
     constructor(data: CountryRenderData, innerRadius: number) {
         super();
 
