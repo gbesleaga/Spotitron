@@ -15,6 +15,7 @@ import { ContextMenuDirective } from './shared/components/context-menu/context-m
 import { DataGuardService } from './shared/data-guard.service';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatProgressBarModule } from '@angular/material/progress-bar'
+import { NotificationsLibModule, NotificationsService } from 'notifications-lib';
 
 const appRoutes: Routes = [
   {
@@ -50,6 +51,7 @@ const appRoutes: Routes = [
     BrowserModule,
     RouterModule.forRoot(appRoutes),
     HttpClientModule,
+    NotificationsLibModule,
     SpotifyLibModule.forRoot({
       redirectURI: environment.spotifyAuthRedirectURI,
       clientId: '40bdabd3ffb14520bebc8e90e97c0c77',
@@ -65,7 +67,8 @@ const appRoutes: Routes = [
   providers: [
     AuthService,
     AuthGuardService,
-    SpotifyHttpClientService
+    SpotifyHttpClientService,
+    NotificationsService
   ],
   bootstrap: [AppComponent]
 })
