@@ -1,3 +1,5 @@
 export const environment = {
-  production: true
+  production: true,
+  spotifyAuthRedirectURI: 'https://spotitron.web.app/auth-callback',
+  spotifyCallBackRoute: 'auth-callback'
 };
