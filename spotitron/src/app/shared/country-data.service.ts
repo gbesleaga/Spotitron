@@ -26,6 +26,9 @@ export class CountryDataService {
     public readonly countryNames: string[];
 
     private readonly storageKeyForChartData: string = 'STRON_charts';
+    private readonly storageKeyForChartDataTimestamp: string = "STRON_chartsTimestamp"
+
+    private readonly storageExpireAfterMS = 24 * 3600 * 1000; // 24h 
     
     //TODO adjust if needed
     private readonly parallelRequests = 7;
@@ -148,15 +151,32 @@ export class CountryDataService {
     }
 
     private fetchChartDataFromStorage() : boolean {
-      const chartDataAsStr = localStorage.getItem(this.storageKeyForChartData);
+      const chartDataTimestampAsStr = localStorage.getItem(this.storageKeyForChartDataTimestamp);
 
-      if (chartDataAsStr) {
-        this.chartData = new Map(JSON.parse(chartDataAsStr));
-
-        return true;
-      } else {
+      if (!chartDataTimestampAsStr) {
         return false;
       }
+
+      const chartDataTimestamp = new Date(Date.parse(chartDataTimestampAsStr));
+      const now = new Date();
+
+      // check if data is still valid
+      const elapsed = now.getTime() - chartDataTimestamp.getTime();
+      
+      if (elapsed > this.storageExpireAfterMS) {
+        console.log('data is old!');
+        return false;
+      }
+
+      const chartDataAsStr = localStorage.getItem(this.storageKeyForChartData);
+
+      if (!chartDataAsStr) {
+        return false;
+      }
+
+      this.chartData = new Map(JSON.parse(chartDataAsStr));
+
+      return true;
     }
 
     private storeChartData() {
@@ -165,6 +185,10 @@ export class CountryDataService {
         console.log(storedData.length);
         //TODO additional compression with lz-string?
         localStorage.setItem(this.storageKeyForChartData, storedData);
+
+        const storedTimestamp = (new Date()).toString();
+        localStorage.setItem(this.storageKeyForChartDataTimestamp, storedTimestamp);
+
       } catch (e) {
         console.log("Failed to store charts: " + e.message);
       }
