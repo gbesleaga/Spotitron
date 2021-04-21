@@ -185,12 +185,6 @@ export class RenderingService {
         this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
         this.composer.addPass(this.outlinePass);
 
-        this.textureLoader.load('/assets/images/tri_pattern.jpg', (texture) => {
-            this.outlinePass!.patternTexture = texture;
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-        });
-
         this.effectFXAA = new ShaderPass(new FXAAShader());
         this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
         this.composer.addPass(this.effectFXAA);
