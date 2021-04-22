@@ -165,6 +165,10 @@ export class RenderingService {
         }
     }
 
+    public getQuality() {
+        return this.quality;
+    }
+
     public init()
     {
         this.camera.position.copy(this.cameraInitialPosition);
