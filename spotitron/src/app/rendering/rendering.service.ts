@@ -18,6 +18,19 @@ import { ShaderPass } from './postprocessing/shader-pass';
 import { ClearPass } from './postprocessing/clear-pass';
 import { NotificationsService, NotificationType } from 'notifications-lib';
 
+// starfield
+export enum StarfieldState {
+    Halt,
+    Cruise,
+    Hyper
+};
+
+// rendering quality
+export enum Quality {
+    Low,
+    Standard
+}
+
 interface Animation {
     mixer: AnimationMixer;
     action: AnimationAction;
@@ -26,13 +39,6 @@ interface Animation {
 
 const GLOBE_SCALE = 250.0;
 const COUNTRY_EXTRUDE_SCALE = 1.3;
-
-// starfield
-export enum StarfieldState {
-    Halt,
-    Cruise,
-    Hyper
-};
 
 const HALT_SPEED = 0.0;
 const ROTATIONAL_HALT_SPEED = 0.005;
@@ -43,6 +49,8 @@ const ACCELERATION = 0.5;
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
+
+    private quality: Quality = Quality.Low;
 
     countrySelected: boolean = false;
     selectedCountryName: string = "";
@@ -71,6 +79,7 @@ export class RenderingService {
 
     // postprocessing
     private composer: EffectComposer | undefined;
+    private starfieldPass: RenderPass | undefined;
     private outlinePass: OutlinePass | undefined;
     private effectFXAA: ShaderPass | undefined;
 
@@ -124,14 +133,36 @@ export class RenderingService {
         private countryDataService: CountryDataService,
         private countrySelectionService: CountrySelectionService,
         private notificationService: NotificationsService) {
-            this.countrySelectionService.onClearSelection().subscribe( () => {
-                this.deselectCountry();
-            });
+
+            // determine default quality
+            this.quality = Quality.Standard;
 
             this.onMouseDownBinding = this.onMouseDown.bind(this);
             this.onMouseUpBinding = this.onMouseUp.bind(this);
             this.onMouseMoveBinding = this.onMouseMove.bind(this);
             this.onWheelBinding = this.onWheel.bind(this);
+
+            this.countrySelectionService.onClearSelection().subscribe( () => {
+                this.deselectCountry();
+            });
+    }
+
+    public setQuality(q: Quality) {
+        this.quality = q;
+
+        if (!this.starfieldPass) {
+            return;
+        }
+
+        switch(this.quality) {
+            case Quality.Low:
+                this.starfieldPass.enabled = false;
+                break;
+
+            case Quality.Standard:
+                this.starfieldPass.enabled = true;
+                break;
+        }
     }
 
     public init()
@@ -171,12 +202,17 @@ export class RenderingService {
         // render passes
         this.composer = new EffectComposer(this.renderer);
 
-        const clearPass = new ClearPass(0xff0000, 1.0);
+        const clearPass = new ClearPass(0x8e44ad, 1.0);
         this.composer.addPass( clearPass );
 
-        const starfieldPass = new RenderPass(this.sceneStarfield, this.camera);
-        starfieldPass.clear = false;
-        this.composer.addPass(starfieldPass);
+        this.starfieldPass = new RenderPass(this.sceneStarfield, this.camera);
+        this.starfieldPass.clear = false;
+
+        if (this.quality === Quality.Low) {
+            this.starfieldPass.enabled = false;
+        }
+
+        this.composer.addPass(this.starfieldPass);
 
         const renderPass = new RenderPass(this.scene, this.camera);
         renderPass.clear = false;
@@ -220,12 +256,17 @@ export class RenderingService {
         // country default materials
         this.countryDefaultMaterials.push(
             new THREE.MeshBasicMaterial({ color: 0x1abc9c }),
+            new THREE.MeshBasicMaterial({ color: 0x16a085 }),
             new THREE.MeshBasicMaterial({ color: 0x2ecc71 }),
             new THREE.MeshBasicMaterial({ color: 0x3498db }),
-            new THREE.MeshBasicMaterial({ color: 0x9b59b6 }),
             new THREE.MeshBasicMaterial({ color: 0xf1c40f }),
             new THREE.MeshBasicMaterial({ color: 0xe67e22 }),
-            new THREE.MeshBasicMaterial({ color: 0xe74c3c })
+            new THREE.MeshBasicMaterial({ color: 0xe74c3c }),
+            new THREE.MeshBasicMaterial({ color: 0xf39c12 }),
+            new THREE.MeshBasicMaterial({ color: 0xd35400 }),
+            new THREE.MeshBasicMaterial({ color: 0x27ae60 }),
+            new THREE.MeshBasicMaterial({ color: 0x2980b9 }),
+            new THREE.MeshBasicMaterial({ color: 0xc0392b })
         );
 
         let countries: any = this.countryDataService.geometryData;
