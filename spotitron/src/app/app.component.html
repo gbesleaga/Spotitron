@@ -1,4 +1,12 @@
 <router-outlet></router-outlet>
 <div id="canvas-placeholder">
 </div>
+<div id="quality-opt">
+    <img src="/assets/images/buttons/more_alt.png" width="20" height="20">
+    <p id="quality-label">QUALITY</p>
+    <div id="quality-values">
+        <p [ngClass]="('quality-val ' + (quality === 'Low'? ' selected ' : ''))" (click)="onLowQualitySelected()">LOW</p>
+        <p [ngClass]="('quality-val ' + (quality === 'Standard' ? ' selected ' : ''))" (click)="onStandardQualitySelected()">STANDARD</p>
+    </div> 
+</div>
 <app-notifications></app-notifications>
