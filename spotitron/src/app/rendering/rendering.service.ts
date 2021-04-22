@@ -135,7 +135,7 @@ export class RenderingService {
         private notificationService: NotificationsService) {
 
             // determine default quality
-            this.quality = Quality.Standard;
+            this.autoDetectQuality();
 
             this.onMouseDownBinding = this.onMouseDown.bind(this);
             this.onMouseUpBinding = this.onMouseUp.bind(this);
@@ -146,6 +146,40 @@ export class RenderingService {
                 this.deselectCountry();
             });
     }
+
+
+    private autoDetectQuality() {
+        this.quality = Quality.Low;
+
+        let gl: WebGL2RenderingContext | WebGLRenderingContext | null = this.renderer.domElement.getContext('webgl2');
+
+        if (!gl) {
+            gl = this.renderer.domElement.getContext('webgl');
+        }
+
+        if (!gl) {
+            return;
+        }
+
+        const dbgInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
+        if (!dbgInfo) {
+            return;
+        }
+
+        const renderer: string = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
+
+        if (!renderer) {
+            return;
+        }
+
+        const rendererLowerCase = renderer.toLowerCase();
+
+        if (rendererLowerCase.includes('nvidia') || rendererLowerCase.includes('amd')) {
+            this.quality = Quality.Standard;
+        }
+    }
+    
 
     public setQuality(q: Quality) {
         this.quality = q;
