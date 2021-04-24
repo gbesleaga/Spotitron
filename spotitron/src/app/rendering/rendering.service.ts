@@ -125,13 +125,15 @@ export class RenderingService {
     private countryAnimations: Map<string, Animation> = new Map();
 
     // user input
-    private onMouseDownBinding: (e: MouseEvent) => void;
-    private onMouseUpBinding: (e: MouseEvent) => void;
-    private onMouseMoveBinding: (e: MouseEvent) => void;
+    private onMouseDownBinding: (e: PointerEvent) => void;
+    private onMouseUpBinding: (e: PointerEvent) => void;
+    private onMouseMoveBinding: (e: PointerEvent) => void;
     private onWheelBinding: (e: WheelEvent) => void;
 
     // mobile
     private longTouchTimer: number | undefined = undefined;
+    private evCache = new Array();
+    private prevDiff = -1;
 
     constructor(
         private countryDataService: CountryDataService,
@@ -532,7 +534,7 @@ export class RenderingService {
         this.starfieldState = state;
     }
 
-    private onMouseDown(e: MouseEvent) {
+    private onMouseDown(e: PointerEvent) {
         this.mousePressed = true;
         this.mouseMoved = false;
 
@@ -540,13 +542,17 @@ export class RenderingService {
         this.mousePosition.y = e.pageY;
 
         if (this.mobileService.isOnMobile()) {
+            // pinch
+            this.evCache.push(e);
+
+            // long hold
             this.longTouchTimer = window.setTimeout(() => {
                 this.doSelect(e);
             }, this.mobileService.LONG_TOUCH_MS);
         }
     }
 
-    private onMouseMove(e: MouseEvent) {
+    private onMouseMove(e: PointerEvent) {
         if (this.mousePressed) {
             if (Math.abs(this.mousePosition.x - e.pageX) > this.mouseDragDelta ||
                 Math.abs(this.mousePosition.y - e.pageY) > this.mouseDragDelta) {
@@ -556,13 +562,49 @@ export class RenderingService {
             this.doOutline(e);
         }
 
-        if (this.mobileService.isOnMobile() && this.longTouchTimer) {
-            window.clearTimeout(this.longTouchTimer);
-            this.longTouchTimer = undefined;
+        if (this.mobileService.isOnMobile()) {
+            // long hold
+            if (this.longTouchTimer) {
+                window.clearTimeout(this.longTouchTimer);
+                this.longTouchTimer = undefined;
+            }
+
+            // pinch
+            // Find this event in the cache and update its record with this event
+            for (let i = 0; i < this.evCache.length; i++) {
+                if (e.pointerId == this.evCache[i].pointerId) {
+                    this.evCache[i] = e;
+                    break;
+                }
+            }
+
+            // If two pointers are down, check for pinch gestures
+            if (this.evCache.length == 2) {
+                // Calculate the distance between the two pointers
+                let curDiff = Math.sqrt(
+                    Math.pow(this.evCache[0].clientX - this.evCache[1].clientX, 2) +
+                    Math.pow(this.evCache[0].clientY - this.evCache[1].clientY, 2)
+                );
+                
+                if (this.prevDiff > 0) {
+                    if (curDiff > this.prevDiff) {
+                        // The distance between the two pointers has increased
+                        this.doDolly('in');
+                    }
+                    
+                    if (curDiff < this.prevDiff) {
+                        // The distance between the two pointers has decreased
+                        this.doDolly('out');
+                    }
+                }
+ 
+                // Cache the distance for the next move event
+                this.prevDiff = curDiff;
+            }
         }
     }
 
-    private doOutline(e: MouseEvent) {
+    private doOutline(e: PointerEvent) {
         if (this.outlinePass) {
             const country = this.getCountryUnderMouse(e);
 
@@ -576,24 +618,35 @@ export class RenderingService {
         }
     }
 
-    private onMouseUp(e: MouseEvent) {
+    private onMouseUp(e: PointerEvent) {
         this.mousePressed = false;
+
+        if (this.mobileService.isOnMobile()) {
+            // pinch
+            this.removeEvent(e);
+        }
 
         if (this.mouseMoved) {
             return;
         }
 
         if (this.mobileService.isOnMobile()) {
+            // long hold
             window.clearTimeout(this.longTouchTimer);
             this.longTouchTimer = undefined;
 
+            if (this.evCache.length < 2) {
+                this.prevDiff = -1;
+            }
+
+            // tap
             this.doOutline(e); // on mobile, a simple tap will outline
         } else {
            this.doSelect(e);
         }
     }
 
-    private doSelect(e: MouseEvent) {
+    private doSelect(e: PointerEvent) {
         const country = this.getCountryUnderMouse(e);
 
         if (country) {
@@ -605,23 +658,41 @@ export class RenderingService {
         }
     }
 
+    private removeEvent(e: PointerEvent) {
+        // Remove this event from the target's cache
+        for (let i = 0; i < this.evCache.length; i++) {
+            if (this.evCache[i].pointerId == e.pointerId) {
+                this.evCache.splice(i, 1);
+                break;
+            }
+        }
+    }   
+
     private onWheel(e: WheelEvent) {
         e.preventDefault();
 
+        if (Math.sign(e.deltaY) < 0) {
+            // - is wheel forward, i.e camera moves in
+            this.doDolly('in');
+        } else {
+            // + is wheel backwards, i.e camera moves out
+            this.doDolly('out');
+        }
+    }
+
+    private doDolly(direction: 'in' | 'out') {
         // bounds won't be exact but that's good enough
         const dist = this.camera.position.distanceTo(this.globe.position);
 
         const cameraDisplacementVector = (this.globe.position.clone().sub(this.camera.position)).normalize();
         cameraDisplacementVector.multiplyScalar(this.cameraDollySpeed);
 
-        if (Math.sign(e.deltaY) < 0) {
-            //  - is wheel forward, i.e camera moves in
+        if (direction === 'in') { 
             // only move in if we are not already too close
             if (dist > this.cameraDollyInMaxDist) {
                 this.camera.position.add(cameraDisplacementVector);
             }
         } else {
-            // + is wheel backwards, i.e camera moves out
             // only move out if we are not already too far away
             if (dist < this.cameraDollyOutMaxDist) {
                 this.camera.position.sub(cameraDisplacementVector);
@@ -631,7 +702,7 @@ export class RenderingService {
         this.controls?.update();
     }
 
-    private getCountryUnderMouse(event: MouseEvent): THREE.Object3D | null {
+    private getCountryUnderMouse(event: PointerEvent): THREE.Object3D | null {
         // calculate mouse position in normalized device coordinates
 	    // (-1 to +1) for both components
         const mouse = new THREE.Vector2();
