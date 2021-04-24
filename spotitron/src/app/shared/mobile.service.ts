@@ -7,6 +7,8 @@ export class MobileService {
 
     private mobile: boolean = false;
 
+    public readonly LONG_TOUCH_MS = 250;
+
     public isOnMobile() {
         if (this.mobileCheckDirty) {
             this.mobile = this.checkForMobile();

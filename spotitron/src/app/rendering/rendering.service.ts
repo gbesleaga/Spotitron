@@ -17,6 +17,7 @@ import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shader-pass';
 import { ClearPass } from './postprocessing/clear-pass';
 import { NotificationsService, NotificationType } from 'notifications-lib';
+import { MobileService } from '../shared/mobile.service';
 
 // starfield
 export enum StarfieldState {
@@ -129,10 +130,14 @@ export class RenderingService {
     private onMouseMoveBinding: (e: MouseEvent) => void;
     private onWheelBinding: (e: WheelEvent) => void;
 
+    // mobile
+    private longTouchTimer: number | undefined = undefined;
+
     constructor(
         private countryDataService: CountryDataService,
         private countrySelectionService: CountrySelectionService,
-        private notificationService: NotificationsService) {
+        private notificationService: NotificationsService,
+        private mobileService: MobileService) {
 
             // determine default quality
             this.autoDetectQuality();
@@ -533,6 +538,12 @@ export class RenderingService {
 
         this.mousePosition.x = e.pageX;
         this.mousePosition.y = e.pageY;
+
+        if (this.mobileService.isOnMobile()) {
+            this.longTouchTimer = window.setTimeout(() => {
+                this.doSelect(e);
+            }, this.mobileService.LONG_TOUCH_MS);
+        }
     }
 
     private onMouseMove(e: MouseEvent) {
@@ -542,16 +553,25 @@ export class RenderingService {
                 this.mouseMoved = true;
             }
         } else {
-            if (this.outlinePass) {
-                const country = this.getCountryUnderMouse(e);
+            this.doOutline(e);
+        }
 
-                if (country) {
-                    this.outlinePass.selectedObjects = [country];
-                    this.countrySelectionService.hoverCountry(country.name);
-                } else {
-                    this.outlinePass.selectedObjects = [];
-                    this.countrySelectionService.hoverCountry("");
-                }
+        if (this.mobileService.isOnMobile() && this.longTouchTimer) {
+            window.clearTimeout(this.longTouchTimer);
+            this.longTouchTimer = undefined;
+        }
+    }
+
+    private doOutline(e: MouseEvent) {
+        if (this.outlinePass) {
+            const country = this.getCountryUnderMouse(e);
+
+            if (country) {
+                this.outlinePass.selectedObjects = [country];
+                this.countrySelectionService.hoverCountry(country.name);
+            } else {
+                this.outlinePass.selectedObjects = [];
+                this.countrySelectionService.hoverCountry("");
             }
         }
     }
@@ -559,16 +579,29 @@ export class RenderingService {
     private onMouseUp(e: MouseEvent) {
         this.mousePressed = false;
 
-        if (!this.mouseMoved) {
-            const country = this.getCountryUnderMouse(e);
+        if (this.mouseMoved) {
+            return;
+        }
 
-            if (country) {
-                this.selectCountry(country.name);
-                if (this.outlinePass) {
-                    this.outlinePass.selectedObjects = [country];
-                    this.countrySelectionService.hoverCountry(country.name);
-                }   
-            }
+        if (this.mobileService.isOnMobile()) {
+            window.clearTimeout(this.longTouchTimer);
+            this.longTouchTimer = undefined;
+
+            this.doOutline(e); // on mobile, a simple tap will outline
+        } else {
+           this.doSelect(e);
+        }
+    }
+
+    private doSelect(e: MouseEvent) {
+        const country = this.getCountryUnderMouse(e);
+
+        if (country) {
+            this.selectCountry(country.name);
+            if (this.outlinePass) {
+                this.outlinePass.selectedObjects = [country];
+                this.countrySelectionService.hoverCountry(country.name);
+            }   
         }
     }
 
