@@ -1,11 +1,12 @@
 import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
 import { NotificationsService, NotificationType } from 'notifications-lib';
-import { forkJoin, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject, SpotifySimplifiedPlaylistObject, SpotifyTrackObject } from 'spotify-lib';
 import { ContextMenuComponent, MenuDisplayer } from 'src/app/shared/components/context-menu/context-menu.component';
 import { ContextMenuDirective } from 'src/app/shared/components/context-menu/context-menu.directive';
 import { CountryDataService } from 'src/app/shared/country-data.service';
 import { CountrySelectionService } from 'src/app/shared/country-selection.service';
+import { MobileService } from 'src/app/shared/mobile.service';
 import { SpotifyUserService } from 'src/app/shared/spotify-user.service';
 import { CountryChart } from 'src/app/shared/types';
 
@@ -50,8 +51,10 @@ export class CountryViewComponent implements OnInit {
 
   // context-menu
   showMenu = false;
-  currentUserId: string | undefined; //TODO get this once (maybe in a service at the beginning!!)
   playlistsOfCurrentUser: SpotifySimplifiedPlaylistObject[] = [];
+
+  // mobile
+  private previouslySelectedTrackIndex: number = -1;
 
   @ViewChild(ContextMenuDirective, {static: true}) contextMenuHost: ContextMenuDirective | undefined;
 
@@ -62,7 +65,12 @@ export class CountryViewComponent implements OnInit {
     private spotifyService: SpotifyHttpClientService,
     private authService: AuthService,
     private spotifyUserService: SpotifyUserService,
-    private notificationService: NotificationsService) {
+    private notificationService: NotificationsService,
+    private mobileService: MobileService) {
+
+      if (this.mobileService.isOnMobile()) {
+        this.displayChartTitle.showState = true; // always visible on mobile
+      }
 
       this.playlistsOfCurrentUser = this.spotifyUserService.getUserOwnedPlaylists();
 
@@ -124,14 +132,26 @@ export class CountryViewComponent implements OnInit {
   }
 
   onChartTitleHoverEnter() {
+    if (this.mobileService.isOnMobile()) {
+      return; //no-op on mobile
+    }
+
     this.displayChartTitle.showState = true;
   }
 
   onChartTitleHoverLeave() {
+    if (this.mobileService.isOnMobile()) {
+      return; //no-op on mobile
+    }
+
     this.displayChartTitle.showState = false;
   }
 
   onDisplayTrackHoverEnter(index: number) {
+    if (this.mobileService.isOnMobile()) {
+      return; //no-op on mobile
+    }
+
     if (this.displayTracks[index].playing) {
       this.displayTracks[index].stateDisplay = 'pause';
     }
@@ -140,6 +160,39 @@ export class CountryViewComponent implements OnInit {
   }
 
   onDisplayTrackHoverLeave(index: number) {
+    if (this.mobileService.isOnMobile()) {
+      return; //no-op on mobile
+    }
+
+    if (this.displayTracks[index].playing) {
+      this.displayTracks[index].stateDisplay = 'playing';
+    } else {
+      this.displayTracks[index].showState = false;
+    }
+  }
+
+  onDisplayTrackClicked(index: number) {
+    if (!this.mobileService.isOnMobile()) {
+      return; //no-op on desktop
+    }
+
+    // disable previous
+    this.onDisplayTrackBlur(this.previouslySelectedTrackIndex);
+
+    if (this.displayTracks[index].playing) {
+      this.displayTracks[index].stateDisplay = 'pause';
+    }
+
+    this.displayTracks[index].showState = true;
+
+    this.previouslySelectedTrackIndex = index;
+  }
+
+  onDisplayTrackBlur(index: number) {
+    if (index < 0) {
+      return;
+    }
+
     if (this.displayTracks[index].playing) {
       this.displayTracks[index].stateDisplay = 'playing';
     } else {
