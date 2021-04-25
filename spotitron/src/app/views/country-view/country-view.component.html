@@ -33,7 +33,10 @@
         </div>
 
         <div class="vcontainer" id="tracks-container">
-            <div *ngFor="let track of displayTracks; let i = index" [ngClass]="('hcontainer chart-tracks ' + (track.playing? 'playing' : ''))" (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)">
+            <div *ngFor="let track of displayTracks; let i = index" 
+                 [ngClass]="('hcontainer chart-tracks ' + (track.playing? 'playing' : ''))" 
+                 (pointerenter)="onDisplayTrackHoverEnter(i)" (pointerleave)="onDisplayTrackHoverLeave(i)" 
+                 (click)="onDisplayTrackClicked(i)">
                 <div class="item-state">
                     <img 
                         [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 

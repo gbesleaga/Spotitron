@@ -17,6 +17,7 @@ import { RenderPass } from './postprocessing/render-pass';
 import { ShaderPass } from './postprocessing/shader-pass';
 import { ClearPass } from './postprocessing/clear-pass';
 import { NotificationsService, NotificationType } from 'notifications-lib';
+import { MobileService } from '../shared/mobile.service';
 
 // starfield
 export enum StarfieldState {
@@ -124,15 +125,25 @@ export class RenderingService {
     private countryAnimations: Map<string, Animation> = new Map();
 
     // user input
-    private onMouseDownBinding: (e: MouseEvent) => void;
-    private onMouseUpBinding: (e: MouseEvent) => void;
-    private onMouseMoveBinding: (e: MouseEvent) => void;
+    private onMouseDownBinding: (e: PointerEvent) => void;
+    private onMouseUpBinding: (e: PointerEvent) => void;
+    private onMouseMoveBinding: (e: PointerEvent) => void;
     private onWheelBinding: (e: WheelEvent) => void;
+
+    // mobile
+    private longTouchTimer: number | undefined = undefined;
+    private evCache = new Array();
+    private prevDiff = -1;
+
+    private onPointerCancelBinding: (e: PointerEvent) => void;
+    private onPointerOutBinding: (e: PointerEvent) => void;
+    private onPointerLeaveBinding: (e: PointerEvent) => void;
 
     constructor(
         private countryDataService: CountryDataService,
         private countrySelectionService: CountrySelectionService,
-        private notificationService: NotificationsService) {
+        private notificationService: NotificationsService,
+        private mobileService: MobileService) {
 
             // determine default quality
             this.autoDetectQuality();
@@ -141,6 +152,10 @@ export class RenderingService {
             this.onMouseUpBinding = this.onMouseUp.bind(this);
             this.onMouseMoveBinding = this.onMouseMove.bind(this);
             this.onWheelBinding = this.onWheel.bind(this);
+
+            this.onPointerCancelBinding = this.onPointerCancel.bind(this);
+            this.onPointerOutBinding = this.onPointerOut.bind(this);
+            this.onPointerLeaveBinding = this.onPointerLeave.bind(this);
 
             this.countrySelectionService.onClearSelection().subscribe( () => {
                 this.deselectCountry();
@@ -422,6 +437,10 @@ export class RenderingService {
         this.renderer.domElement.addEventListener('pointermove', this.onMouseMoveBinding);
         this.renderer.domElement.addEventListener('pointerup', this.onMouseUpBinding);
         this.renderer.domElement.addEventListener('wheel', this.onWheelBinding);
+
+        this.renderer.domElement.addEventListener('pointercancel', this.onPointerCancelBinding);
+        this.renderer.domElement.addEventListener('pointerleave', this.onPointerLeaveBinding);
+        this.renderer.domElement.addEventListener('pointerout', this.onPointerOutBinding);
     }
 
     public disableUserInput() {
@@ -429,6 +448,13 @@ export class RenderingService {
         this.renderer.domElement.removeEventListener('pointermove', this.onMouseMoveBinding);
         this.renderer.domElement.removeEventListener('pointerup', this.onMouseUpBinding);
         this.renderer.domElement.removeEventListener('wheel', this.onWheelBinding);
+
+        this.renderer.domElement.removeEventListener('pointercancel', this.onPointerCancelBinding);
+        this.renderer.domElement.removeEventListener('pointerleave', this.onPointerLeaveBinding);
+        this.renderer.domElement.removeEventListener('pointerout', this.onPointerOutBinding);
+
+        this.evCache = new Array();
+        this.prevDiff = -1;
     }
 
     public render() {
@@ -527,68 +553,190 @@ export class RenderingService {
         this.starfieldState = state;
     }
 
-    private onMouseDown(e: MouseEvent) {
+    private onMouseDown(e: PointerEvent) {
         this.mousePressed = true;
         this.mouseMoved = false;
 
         this.mousePosition.x = e.pageX;
         this.mousePosition.y = e.pageY;
+
+        if (this.mobileService.isOnMobile()) {
+            // pinch
+            this.evCache.push(e);
+
+            if (this.evCache.length === 2) {
+                if (this.longTouchTimer) {
+                    window.clearTimeout(this.longTouchTimer);
+                    this.longTouchTimer = undefined;
+                }
+            } else {
+                // long hold
+                this.longTouchTimer = window.setTimeout(() => {
+                    this.doSelect(e);
+                }, this.mobileService.LONG_TOUCH_MS);
+            }
+        }
     }
 
-    private onMouseMove(e: MouseEvent) {
+    private onMouseMove(e: PointerEvent) {
         if (this.mousePressed) {
             if (Math.abs(this.mousePosition.x - e.pageX) > this.mouseDragDelta ||
                 Math.abs(this.mousePosition.y - e.pageY) > this.mouseDragDelta) {
                 this.mouseMoved = true;
             }
         } else {
-            if (this.outlinePass) {
-                const country = this.getCountryUnderMouse(e);
+            this.doOutline(e);
+        }
 
-                if (country) {
-                    this.outlinePass.selectedObjects = [country];
-                    this.countrySelectionService.hoverCountry(country.name);
-                } else {
-                    this.outlinePass.selectedObjects = [];
-                    this.countrySelectionService.hoverCountry("");
+        if (this.mobileService.isOnMobile()) {
+            // long hold
+            if (this.longTouchTimer) {
+                window.clearTimeout(this.longTouchTimer);
+                this.longTouchTimer = undefined;
+            }
+
+            // pinch
+            // Find this event in the cache and update its record with this event
+            for (let i = 0; i < this.evCache.length; i++) {
+                if (e.pointerId == this.evCache[i].pointerId) {
+                    this.evCache[i] = e;
+                    break;
                 }
+            }
+
+            // If two pointers are down, check for pinch gestures
+            if (this.evCache.length == 2) {
+                // Calculate the distance between the two pointers
+                let curDiff = Math.sqrt(
+                    Math.pow(this.evCache[0].clientX - this.evCache[1].clientX, 2) +
+                    Math.pow(this.evCache[0].clientY - this.evCache[1].clientY, 2)
+                );
+                
+                if (this.prevDiff > 0) {
+                    if (curDiff > this.prevDiff) {
+                        // The distance between the two pointers has increased
+                        this.doDolly('in');
+                    }
+                    
+                    if (curDiff < this.prevDiff) {
+                        // The distance between the two pointers has decreased
+                        this.doDolly('out');
+                    }
+                }
+ 
+                // Cache the distance for the next move event
+                this.prevDiff = curDiff;
             }
         }
     }
 
-    private onMouseUp(e: MouseEvent) {
-        this.mousePressed = false;
-
-        if (!this.mouseMoved) {
+    private doOutline(e: PointerEvent) {
+        if (this.outlinePass) {
             const country = this.getCountryUnderMouse(e);
 
             if (country) {
-                this.selectCountry(country.name);
-                if (this.outlinePass) {
-                    this.outlinePass.selectedObjects = [country];
-                    this.countrySelectionService.hoverCountry(country.name);
-                }   
+                this.outlinePass.selectedObjects = [country];
+                this.countrySelectionService.hoverCountry(country.name);
+            } else {
+                this.outlinePass.selectedObjects = [];
+                this.countrySelectionService.hoverCountry("");
             }
+        }
+    }
+
+    private onMouseUp(e: PointerEvent) {
+        this.mousePressed = false;
+
+        if (this.mobileService.isOnMobile()) {
+            // pinch
+            this.removeEvent(e);
+        }
+
+        if (this.mouseMoved) {
+            return;
+        }
+
+        if (this.mobileService.isOnMobile()) {
+            // long hold
+            window.clearTimeout(this.longTouchTimer);
+            this.longTouchTimer = undefined;
+
+            // tap
+            this.doOutline(e); // on mobile, a simple tap will outline
+        } else {
+           this.doSelect(e);
+        }
+    }
+
+    private doSelect(e: PointerEvent) {
+        const country = this.getCountryUnderMouse(e);
+
+        if (country) {
+            this.selectCountry(country.name);
+            if (this.outlinePass) {
+                this.outlinePass.selectedObjects = [country];
+                this.countrySelectionService.hoverCountry(country.name);
+            }   
+        }
+    }
+
+    private removeEvent(e: PointerEvent) {
+        // Remove this event from the target's cache
+        for (let i = 0; i < this.evCache.length; i++) {
+            if (this.evCache[i].pointerId == e.pointerId) {
+                this.evCache.splice(i, 1);
+                break;
+            }
+        }
+
+        if (this.evCache.length < 2) {
+            this.prevDiff = -1;
+        }
+    }
+    
+    private onPointerCancel(e: PointerEvent) {
+        if (this.mobileService.isOnMobile()) {
+            this.removeEvent(e);
+        }
+    }
+
+    private onPointerOut(e: PointerEvent) {
+        if (this.mobileService.isOnMobile()) {
+            this.removeEvent(e);
+        }
+    }
+
+    private onPointerLeave(e: PointerEvent) {
+        if (this.mobileService.isOnMobile()) {
+            this.removeEvent(e);
         }
     }
 
     private onWheel(e: WheelEvent) {
         e.preventDefault();
 
+        if (Math.sign(e.deltaY) < 0) {
+            // - is wheel forward, i.e camera moves in
+            this.doDolly('in');
+        } else {
+            // + is wheel backwards, i.e camera moves out
+            this.doDolly('out');
+        }
+    }
+
+    private doDolly(direction: 'in' | 'out') {
         // bounds won't be exact but that's good enough
         const dist = this.camera.position.distanceTo(this.globe.position);
 
         const cameraDisplacementVector = (this.globe.position.clone().sub(this.camera.position)).normalize();
         cameraDisplacementVector.multiplyScalar(this.cameraDollySpeed);
 
-        if (Math.sign(e.deltaY) < 0) {
-            //  - is wheel forward, i.e camera moves in
+        if (direction === 'in') { 
             // only move in if we are not already too close
             if (dist > this.cameraDollyInMaxDist) {
                 this.camera.position.add(cameraDisplacementVector);
             }
         } else {
-            // + is wheel backwards, i.e camera moves out
             // only move out if we are not already too far away
             if (dist < this.cameraDollyOutMaxDist) {
                 this.camera.position.sub(cameraDisplacementVector);
@@ -598,7 +746,7 @@ export class RenderingService {
         this.controls?.update();
     }
 
-    private getCountryUnderMouse(event: MouseEvent): THREE.Object3D | null {
+    private getCountryUnderMouse(event: PointerEvent): THREE.Object3D | null {
         // calculate mouse position in normalized device coordinates
 	    // (-1 to +1) for both components
         const mouse = new THREE.Vector2();
