@@ -9,8 +9,6 @@
 
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Lato&family=Zen+Dots&display=swap" rel="stylesheet"> 
-  <!--link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"-->
 </head>
 <body>
   <script type="x-shader" id="starfield-vs">
@@ -23,6 +21,10 @@
   </script>
 
   <script type="x-shader" id="starfield-fs">
+    // Modified version of
+    // Starfield Tutorial by Martijn Steinrucken aka BigWings - 2020
+    // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
     // TODO make adjustable and tweak for performance
 		#define NUM_LAYERS 9.
     #define BRIGHTNESS .02
