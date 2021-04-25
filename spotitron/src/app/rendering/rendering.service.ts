@@ -135,6 +135,10 @@ export class RenderingService {
     private evCache = new Array();
     private prevDiff = -1;
 
+    private onPointerCancelBinding: (e: PointerEvent) => void;
+    private onPointerOutBinding: (e: PointerEvent) => void;
+    private onPointerLeaveBinding: (e: PointerEvent) => void;
+
     constructor(
         private countryDataService: CountryDataService,
         private countrySelectionService: CountrySelectionService,
@@ -148,6 +152,10 @@ export class RenderingService {
             this.onMouseUpBinding = this.onMouseUp.bind(this);
             this.onMouseMoveBinding = this.onMouseMove.bind(this);
             this.onWheelBinding = this.onWheel.bind(this);
+
+            this.onPointerCancelBinding = this.onPointerCancel.bind(this);
+            this.onPointerOutBinding = this.onPointerOut.bind(this);
+            this.onPointerLeaveBinding = this.onPointerLeave.bind(this);
 
             this.countrySelectionService.onClearSelection().subscribe( () => {
                 this.deselectCountry();
@@ -429,6 +437,10 @@ export class RenderingService {
         this.renderer.domElement.addEventListener('pointermove', this.onMouseMoveBinding);
         this.renderer.domElement.addEventListener('pointerup', this.onMouseUpBinding);
         this.renderer.domElement.addEventListener('wheel', this.onWheelBinding);
+
+        this.renderer.domElement.addEventListener('pointercancel', this.onPointerCancelBinding);
+        this.renderer.domElement.addEventListener('pointerleave', this.onPointerLeaveBinding);
+        this.renderer.domElement.addEventListener('pointerout', this.onPointerOutBinding);
     }
 
     public disableUserInput() {
@@ -436,6 +448,13 @@ export class RenderingService {
         this.renderer.domElement.removeEventListener('pointermove', this.onMouseMoveBinding);
         this.renderer.domElement.removeEventListener('pointerup', this.onMouseUpBinding);
         this.renderer.domElement.removeEventListener('wheel', this.onWheelBinding);
+
+        this.renderer.domElement.removeEventListener('pointercancel', this.onPointerCancelBinding);
+        this.renderer.domElement.removeEventListener('pointerleave', this.onPointerLeaveBinding);
+        this.renderer.domElement.removeEventListener('pointerout', this.onPointerOutBinding);
+
+        this.evCache = new Array();
+        this.prevDiff = -1;
     }
 
     public render() {
@@ -545,10 +564,17 @@ export class RenderingService {
             // pinch
             this.evCache.push(e);
 
-            // long hold
-            this.longTouchTimer = window.setTimeout(() => {
-                this.doSelect(e);
-            }, this.mobileService.LONG_TOUCH_MS);
+            if (this.evCache.length === 2) {
+                if (this.longTouchTimer) {
+                    window.clearTimeout(this.longTouchTimer);
+                    this.longTouchTimer = undefined;
+                }
+            } else {
+                // long hold
+                this.longTouchTimer = window.setTimeout(() => {
+                    this.doSelect(e);
+                }, this.mobileService.LONG_TOUCH_MS);
+            }
         }
     }
 
@@ -635,10 +661,6 @@ export class RenderingService {
             window.clearTimeout(this.longTouchTimer);
             this.longTouchTimer = undefined;
 
-            if (this.evCache.length < 2) {
-                this.prevDiff = -1;
-            }
-
             // tap
             this.doOutline(e); // on mobile, a simple tap will outline
         } else {
@@ -666,7 +688,29 @@ export class RenderingService {
                 break;
             }
         }
-    }   
+
+        if (this.evCache.length < 2) {
+            this.prevDiff = -1;
+        }
+    }
+    
+    private onPointerCancel(e: PointerEvent) {
+        if (this.mobileService.isOnMobile()) {
+            this.removeEvent(e);
+        }
+    }
+
+    private onPointerOut(e: PointerEvent) {
+        if (this.mobileService.isOnMobile()) {
+            this.removeEvent(e);
+        }
+    }
+
+    private onPointerLeave(e: PointerEvent) {
+        if (this.mobileService.isOnMobile()) {
+            this.removeEvent(e);
+        }
+    }
 
     private onWheel(e: WheelEvent) {
         e.preventDefault();
