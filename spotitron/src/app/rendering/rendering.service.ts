@@ -98,7 +98,7 @@ export class RenderingService {
     private mousePosition: Position2D = {x: 0, y: 0};
     private mouseDragDelta: number = 5;
 
-    //animations
+    // animations
     private clock = new Clock();
     private activeAnimations: Animation[] = [];
     private cameraAnimating: boolean = false;
@@ -130,9 +130,9 @@ export class RenderingService {
     private onWheelBinding: (e: WheelEvent) => void;
 
     // mobile
-    private longTouchTimer: number | undefined = undefined;
     private evCache = new Array();
     private prevDiff = -1;
+    private tapCountryName: string = "";
 
     private onPointerCancelBinding: (e: PointerEvent) => void;
     private onPointerOutBinding: (e: PointerEvent) => void;
@@ -590,18 +590,6 @@ export class RenderingService {
         if (this.mobileService.isOnMobile()) {
             // pinch
             this.evCache.push(e);
-
-            if (this.evCache.length === 2) {
-                if (this.longTouchTimer) {
-                    window.clearTimeout(this.longTouchTimer);
-                    this.longTouchTimer = undefined;
-                }
-            } else {
-                // long hold
-                this.longTouchTimer = window.setTimeout(() => {
-                    this.doSelect(e);
-                }, this.mobileService.LONG_TOUCH_MS);
-            }
         }
     }
 
@@ -616,12 +604,6 @@ export class RenderingService {
         }
 
         if (this.mobileService.isOnMobile()) {
-            // long hold
-            if (this.longTouchTimer) {
-                window.clearTimeout(this.longTouchTimer);
-                this.longTouchTimer = undefined;
-            }
-
             // pinch
             // Find this event in the cache and update its record with this event
             for (let i = 0; i < this.evCache.length; i++) {
@@ -684,12 +666,18 @@ export class RenderingService {
         }
 
         if (this.mobileService.isOnMobile()) {
-            // long hold
-            window.clearTimeout(this.longTouchTimer);
-            this.longTouchTimer = undefined;
-
-            // tap
-            this.doOutline(e); // on mobile, a simple tap will outline
+            const country = this.getCountryUnderMouse(e);
+            if (country && country.name) {
+                if(country.name !== this.tapCountryName) {
+                    // first tap outlines
+                    this.tapCountryName = country.name;
+                    this.doOutline(e);
+                } else {
+                    // second tap selects
+                    this.doSelect(e);
+                    this.tapCountryName = "";
+                }
+            }            
         } else {
            this.doSelect(e);
         }
