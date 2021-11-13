@@ -45,7 +45,7 @@ const ROTATIONAL_HALT_SPEED = 0.005;
 const CRUISE_SPEED = 0.02;
 const HYPER_SPEED = 10;
 
-const ACCELERATION = 0.5;
+const ACCELERATION = 0.2; // 0.5
 
 @Injectable({providedIn: 'root'})
 export class RenderingService {
