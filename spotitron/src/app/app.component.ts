@@ -10,7 +10,7 @@ import { Quality, RenderingService } from './rendering/rendering.service';
 export class AppComponent implements AfterViewInit, AfterContentInit {
   title = 'spotitron';
 
-  quality: 'Low' | 'Standard' | '' = '';
+  quality: Quality = "Low";
 
   constructor(private renderingService: RenderingService,
     private animationService: AnimationService) {}
@@ -22,26 +22,16 @@ export class AppComponent implements AfterViewInit, AfterContentInit {
 
   ngAfterContentInit() {
     // get autodetected quality
-    const q = this.renderingService.getQuality();
-
-    switch (q) {
-      case Quality.Low:
-        this.quality = 'Low';
-        break;
-
-      case Quality.Standard:
-        this.quality = 'Standard';
-        break;
-    }
+    this.quality = this.renderingService.getQuality();
   }
 
   onLowQualitySelected() {
-    this.renderingService.setQuality(Quality.Low);
     this.quality = 'Low';
+    this.renderingService.setQuality(this.quality);
   }
 
   onStandardQualitySelected() {
-    this.renderingService.setQuality(Quality.Standard);
     this.quality = 'Standard';
+    this.renderingService.setQuality(this.quality);
   }
 }

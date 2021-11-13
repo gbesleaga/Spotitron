@@ -19,6 +19,7 @@ import { ClearPass } from './postprocessing/clear-pass';
 import { NotificationsService, NotificationType } from 'notifications-lib';
 import { MobileService } from '../shared/mobile.service';
 
+
 // starfield
 export enum StarfieldState {
     Halt,
@@ -27,10 +28,7 @@ export enum StarfieldState {
 };
 
 // rendering quality
-export enum Quality {
-    Low,
-    Standard
-}
+export type Quality = "Low" | "Standard";
 
 interface Animation {
     mixer: AnimationMixer;
@@ -51,7 +49,8 @@ const ACCELERATION = 0.5;
 @Injectable({providedIn: 'root'})
 export class RenderingService {
 
-    private quality: Quality = Quality.Low;
+    private quality: Quality = "Low";
+    private storageKeyForQuality = "STRON_quality"
 
     countrySelected: boolean = false;
     selectedCountryName: string = "";
@@ -164,7 +163,16 @@ export class RenderingService {
 
 
     private autoDetectQuality() {
-        this.quality = Quality.Low;
+        // if quality is already stored, use it
+        const q = this.fetchQualityFromStorage();
+
+        if (q) {
+            this.quality = q;
+            return;
+        }
+
+        // assume quality is low and then check if we can do better
+        this.quality = "Low";
 
         let gl: WebGL2RenderingContext | WebGLRenderingContext | null = this.renderer.domElement.getContext('webgl2');
 
@@ -191,31 +199,50 @@ export class RenderingService {
         const rendererLowerCase = renderer.toLowerCase();
 
         if (rendererLowerCase.includes('nvidia') || rendererLowerCase.includes('amd')) {
-            this.quality = Quality.Standard;
+            this.quality = "Standard";
         }
     }
     
 
     public setQuality(q: Quality) {
         this.quality = q;
+        this.storeQuality();
 
         if (!this.starfieldPass) {
             return;
         }
 
         switch(this.quality) {
-            case Quality.Low:
+            case "Low":
                 this.starfieldPass.enabled = false;
                 break;
 
-            case Quality.Standard:
+            case "Standard":
                 this.starfieldPass.enabled = true;
                 break;
         }
     }
 
+    private storeQuality(): void {
+        try {
+            localStorage.setItem(this.storageKeyForQuality, this.quality);
+        } catch (e) {
+            // do nothing
+        }
+    }
+
     public getQuality() {
         return this.quality;
+    }
+
+    private fetchQualityFromStorage(): Quality | null {
+        const q = localStorage.getItem(this.storageKeyForQuality);
+
+        if (q == "Low" || q == "Standard") {
+            return q;
+        }
+
+        return null;
     }
 
     public init()
@@ -261,7 +288,7 @@ export class RenderingService {
         this.starfieldPass = new RenderPass(this.sceneStarfield, this.camera);
         this.starfieldPass.clear = false;
 
-        if (this.quality === Quality.Low) {
+        if (this.quality === "Low") {
             this.starfieldPass.enabled = false;
         }
 
