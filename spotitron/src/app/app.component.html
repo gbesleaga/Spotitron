@@ -1,7 +1,7 @@
 <router-outlet></router-outlet>
 <div id="canvas-placeholder" class="no-select">
 </div>
-<div id="quality-opt" class="no-select">
+<div id="quality-opt" [ngClass]="('no-select ' + (hideUI? 'hidden': ''))">
     <img src="/assets/images/buttons/more_alt.png" width="20" height="20">
     <p id="quality-label">QUALITY</p>
     <div id="quality-values">

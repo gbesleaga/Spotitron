@@ -21,11 +21,16 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
   hoveredCountrySubscription: Subscription | undefined = undefined;
   hoveredCountry: string = "";
 
+  selectedCountrySubscription: Subscription | undefined = undefined;
+  selectionClearedSubscription: Subscription | undefined = undefined;
+
   isOnMobile: boolean = false;
+
+  hideUI = false;
 
   constructor(
     private countryDataService: CountryDataService,
-    private CountrySelectionService: CountrySelectionService,
+    private countrySelectionService: CountrySelectionService,
     private renderingService: RenderingService,
     private authService: AuthService,
     private mobileService: MobileService,
@@ -35,8 +40,16 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
   ngAfterViewInit(){
     this.renderingService.setStarfieldState(StarfieldState.Halt);
     this.renderingService.initGlobe(this.countryDataService.getChartData());
-    this.hoveredCountrySubscription = this.CountrySelectionService.getHoveredCountry().subscribe(country => {
+    this.hoveredCountrySubscription = this.countrySelectionService.getHoveredCountry().subscribe(country => {
       this.hoveredCountry = country;
+    });
+
+    this.selectedCountrySubscription = this.selectedCountrySubscription = this.countrySelectionService.getSelectedCountry().subscribe( () => {
+      this.hideUI = true;
+    });
+
+    this.selectionClearedSubscription = this.countrySelectionService.onClearSelection().subscribe( () => {
+      this.hideUI = false;
     });
   }
 
@@ -47,6 +60,14 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
   ngOnDestroy() {
     if (this.hoveredCountrySubscription) {
       this.hoveredCountrySubscription.unsubscribe();
+    }
+
+    if (this.selectedCountrySubscription) {
+      this.selectedCountrySubscription.unsubscribe();
+    }
+
+    if (this.selectionClearedSubscription) {
+      this.selectionClearedSubscription.unsubscribe();
     }
   }
 

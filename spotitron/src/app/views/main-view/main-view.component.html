@@ -1,5 +1,5 @@
 <app-country-view></app-country-view>
-<div [ngClass]="('spotify-auth no-select logout ' + (isOnMobile? 'mobile':''))" (click)="onLogout()">
+<div [ngClass]="('spotify-auth no-select logout ' + (isOnMobile? 'mobile':'') + ' ' + (hideUI? 'hidden': ''))" (click)="onLogout()">
     <img id="spotify-icon" src="/assets/images/spotify.png" alt="Spotify Icon">
     <p class="spotify-text">Logout</p>
 </div>
