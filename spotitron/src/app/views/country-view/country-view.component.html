@@ -17,7 +17,7 @@
             </div>
             <div class="item-more">
                 <img 
-                [ngClass]="((displayChartTitle.showState? '' : 'hidden'))" 
+                [ngClass]="('no-select ' + (displayChartTitle.showState? '' : 'hidden'))" 
                 src="/assets/images/buttons/more.png" 
                 width="40" height="40"
                 (click)="openChartMoreMenu($event)">
@@ -39,7 +39,7 @@
                  (click)="onDisplayTrackClicked(i)">
                 <div class="item-state">
                     <img 
-                        [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 
+                        [ngClass]="('no-select item-image ' + (track.showState? '' : 'hidden'))" 
                         src="/assets/images/buttons/{{track.stateDisplay}}.png" 
                         (click)="togglePlay(i, $event)">
                 </div>
@@ -48,7 +48,7 @@
                 <div class="item-artist padded">{{track.artist}}</div>
                 <div class="item-more">
                     <img 
-                    [ngClass]="('item-image ' + (track.showState? '' : 'hidden'))" 
+                    [ngClass]="('no-select item-image ' + (track.showState? '' : 'hidden'))" 
                     src="/assets/images/buttons/more.png"
                     (click)="openTrackMoreMenu(i, $event)">
                 </div> 
