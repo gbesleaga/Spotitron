@@ -134,6 +134,11 @@
   text-align: center;
 }
 
+.flat-emoji {
+  color: transparent; 
+  text-shadow: 0 0 #dbe2ec;
+}
+
 .item-state img {
   width: max(2.5vw, 30px);
   height: max(2.5vw, 30px);
