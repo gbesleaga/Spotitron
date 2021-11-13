@@ -1,6 +1,7 @@
-import { AfterContentInit, AfterViewInit, Component } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, OnDestroy } from '@angular/core';
 import { AnimationService } from './rendering/animation.service';
 import { Quality, RenderingService } from './rendering/rendering.service';
+import { CountrySelectionService } from './shared/country-selection.service';
 
 @Component({
   selector: 'app-root',
@@ -10,12 +11,23 @@ import { Quality, RenderingService } from './rendering/rendering.service';
 export class AppComponent implements AfterViewInit, AfterContentInit {
   title = 'spotitron';
 
+  hideUI = false;
   quality: Quality = "Low";
 
   constructor(private renderingService: RenderingService,
-    private animationService: AnimationService) {}
+    private animationService: AnimationService,
+    private countrySelectionService: CountrySelectionService) {
+      // no need to clear
+      this.countrySelectionService.getSelectedCountry().subscribe( () => {
+        this.hideUI = true;
+      });
 
-  ngAfterViewInit(){
+      this.countrySelectionService.onClearSelection().subscribe( () => {
+        this.hideUI = false;
+      });
+  }
+
+  ngAfterViewInit() {
     this.renderingService.init();
     this.animationService.animate();
   }
