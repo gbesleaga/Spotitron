@@ -38,6 +38,7 @@ interface Animation {
 
 const GLOBE_SCALE = 250.0;
 const COUNTRY_EXTRUDE_SCALE = 1.3;
+const COUNTRY_STARTING_SCALE = 1.005; // avoids z-fighting with globe
 
 const HALT_SPEED = 0.0;
 const ROTATIONAL_HALT_SPEED = 0.005;
@@ -109,7 +110,10 @@ export class RenderingService {
         new VectorKeyframeTrack(
             '.scale',
             [0, 1],     // times
-            [1.0, 1.0, 1.0, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE]  // values
+            [
+                COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, 
+                COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE
+            ]  // values
         )
     ]);
 
@@ -117,7 +121,10 @@ export class RenderingService {
         new VectorKeyframeTrack(
             '.scale',
             [0, 1],     // times
-            [COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, 1.0, 1.0, 1.0]  // values
+            [
+                COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, COUNTRY_EXTRUDE_SCALE, 
+                COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE
+            ]  // values
         )
     ]);
 
@@ -409,6 +416,9 @@ export class RenderingService {
 
             cMesh.name = name;
             cMeshExtrude.name = name + this.countryExtrudeSuffix;
+
+            cMesh.scale.set(COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE);
+            cMeshExtrude.scale.set(COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE);
 
             this.globe.add(cMesh);
             this.globe.add(cMeshExtrude);
