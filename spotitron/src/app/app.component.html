@@ -2,7 +2,7 @@
 <div id="canvas-placeholder" class="no-select">
 </div>
 <div id="quality-opt" [ngClass]="('no-select ' + (hideUI? 'hidden': ''))">
-    <img src="/assets/images/buttons/more_alt.png" width="20" height="20">
+    <img src="/assets/images/buttons/more_alt.png" width="20" height="20" alt="Quality options">
     <p id="quality-label">QUALITY</p>
     <div id="quality-values">
         <p [ngClass]="('quality-val ' + (quality === 'Low'? ' selected ' : ''))" (click)="onLowQualitySelected()">LOW</p>
