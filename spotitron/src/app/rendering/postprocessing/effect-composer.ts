@@ -109,10 +109,9 @@ export class EffectComposer {
 
 		let maskActive = false;
 
-		let pass, i, il = this.passes.length;
-
-		for (i = 0; i < il; i ++) {
-			pass = this.passes[i];
+		let il = this.passes.length;
+		for (let i = 0; i < il; i ++) {
+			const pass = this.passes[i];
 
 			if (pass.enabled === false) {
                 continue

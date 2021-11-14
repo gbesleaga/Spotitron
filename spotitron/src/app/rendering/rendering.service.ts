@@ -366,7 +366,7 @@ export class RenderingService {
         this.selectableCountries = [];
 
         for (let name in countries) {
-            let cGeometry = new Map3DGeometry (countries[name], 2);
+            let cGeometry = new Map3DGeometry (countries[name], 1);
             let cGeometryExtrude = new Map3DGeometry (countries[name], 0)
 
             let material: THREE.ShaderMaterial | THREE.MeshBasicMaterial | undefined = this.countryDefaultMaterials[i % this.countryDefaultMaterials.length];
