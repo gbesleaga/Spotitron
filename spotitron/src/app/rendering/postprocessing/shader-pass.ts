@@ -9,17 +9,16 @@ import {
 import { FullScreenQuad, Pass } from './pass';
 
 export class ShaderPass extends Pass {
-    textureID: any;
-    shader: any;
+    textureID: string;
     uniforms: { [uniform: string]: IUniform } = {};
     material: ShaderMaterial | undefined = undefined;
 
     fsQuad: FullScreenQuad;
 
-    constructor(shader: any, textureID?: any) {
+    constructor(shader: any, textureID?: string | undefined) {
         super();
 
-        this.textureID = (textureID !== undefined) ? textureID : 'tDiffuse';
+        this.textureID = (textureID !== undefined)? textureID : 'tDiffuse';
 
         if (shader instanceof ShaderMaterial) {
             this.uniforms = shader.uniforms;
@@ -37,10 +36,10 @@ export class ShaderPass extends Pass {
         this.fsQuad = new FullScreenQuad(this.material);
     }
 
-    setSize(width: number, height: number): void {
+    setSize(_width: number, _height: number): void {
     }
 
-    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime?: number, maskActive?: boolean) {
+    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, _deltaTime?: number, _maskActive?: boolean) {
 		if (this.uniforms && this.uniforms[this.textureID]) {
 			this.uniforms[this.textureID].value = readBuffer.texture;
 		}
