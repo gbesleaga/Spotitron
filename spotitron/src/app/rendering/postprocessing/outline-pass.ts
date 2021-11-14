@@ -1,6 +1,6 @@
 import {
 	AdditiveBlending,
-    Camera,
+  Camera,
 	Color,
 	DoubleSide,
 	LinearFilter,
@@ -9,15 +9,15 @@ import {
 	MeshDepthMaterial,
 	NoBlending,
 	Object3D,
-    PerspectiveCamera,
+  PerspectiveCamera,
 	RGBADepthPacking,
 	RGBAFormat,
-    Scene,
+  Scene,
 	ShaderMaterial,
 	UniformsUtils,
 	Vector2,
 	Vector3,
-    WebGLRenderer,
+  WebGLRenderer,
 	WebGLRenderTarget
 } from 'three';
 import { FullScreenQuad, Pass } from './pass';
@@ -28,7 +28,7 @@ const BlurDirectionY = new Vector2( 0.0, 1.0 );
 
 export class OutlinePass extends Pass {
 
-    visibleEdgeColor = new Color( 1, 1, 1 );
+  visibleEdgeColor = new Color( 1, 1, 1 );
 	hiddenEdgeColor = new Color( 0.0, 0.0, 0.0 );
 	edgeGlow = 0.0;
 	usePatternTexture = false;
@@ -39,133 +39,135 @@ export class OutlinePass extends Pass {
 
 	_visibilityCache = new Map();
     
-    renderScene: Scene;
-    renderCamera: PerspectiveCamera;
-    selectedObjects: Object3D[];
-    resolution: Vector2;
-    
-    maskBufferMaterial = new MeshBasicMaterial( { color: 0xffffff } );
+  renderScene: Scene;
+  renderCamera: PerspectiveCamera;
+  selectedObjects: Object3D[];
+  resolution: Vector2;
+  
+  maskBufferMaterial = new MeshBasicMaterial( { color: 0xffffff } );
 
-    renderTargetMaskBuffer: WebGLRenderTarget;
-    depthMaterial: MeshDepthMaterial;
-    prepareMaskMaterial: ShaderMaterial;
-    renderTargetDepthBuffer: WebGLRenderTarget;
-    renderTargetMaskDownSampleBuffer: WebGLRenderTarget;
-    renderTargetBlurBuffer1: WebGLRenderTarget;
-    renderTargetBlurBuffer2: WebGLRenderTarget;
+  renderTargetMaskBuffer: WebGLRenderTarget;
+  depthMaterial: MeshDepthMaterial;
+  prepareMaskMaterial: ShaderMaterial;
+  renderTargetDepthBuffer: WebGLRenderTarget;
+  renderTargetMaskDownSampleBuffer: WebGLRenderTarget;
+  renderTargetBlurBuffer1: WebGLRenderTarget;
+  renderTargetBlurBuffer2: WebGLRenderTarget;
 
-    edgeDetectionMaterial: ShaderMaterial;
-    renderTargetEdgeBuffer1: WebGLRenderTarget;
-    renderTargetEdgeBuffer2: WebGLRenderTarget;
+  edgeDetectionMaterial: ShaderMaterial;
+  renderTargetEdgeBuffer1: WebGLRenderTarget;
+  renderTargetEdgeBuffer2: WebGLRenderTarget;
 
-    separableBlurMaterial1: ShaderMaterial;
-    separableBlurMaterial2: ShaderMaterial;
+  separableBlurMaterial1: ShaderMaterial;
+  separableBlurMaterial2: ShaderMaterial;
 
-    overlayMaterial: ShaderMaterial;
+  overlayMaterial: ShaderMaterial;
 
-    copyUniforms: any;
-    materialCopy: ShaderMaterial;
+  copyUniforms: any;
+  materialCopy: ShaderMaterial;
 
-    _oldClearColor = new Color();
-    oldClearAlpha = 1;
+  _oldClearColor = new Color();
+  oldClearAlpha = 1;
 
-    fsQuad = new FullScreenQuad(undefined);
+  fsQuad = new FullScreenQuad(undefined);
 
-    tempPulseColor1 = new Color();
-    tempPulseColor2 = new Color();
-    textureMatrix = new Matrix4();
+  tempPulseColor1 = new Color();
+  tempPulseColor2 = new Color();
+  textureMatrix = new Matrix4();
 
 	patternTexture: THREE.Texture | undefined;
 
-    constructor(resolution: undefined | Vector2, scene: Scene, camera: PerspectiveCamera, selectedObjects: undefined | Object3D[]) {
-        super();
 
-        this.renderScene = scene;
-        this.renderCamera = camera;
+  constructor(resolution: undefined | Vector2, scene: Scene, camera: PerspectiveCamera, selectedObjects: undefined | Object3D[]) {
+      super();
 
-        this.selectedObjects = selectedObjects !== undefined ? selectedObjects : [];
+      this.renderScene = scene;
+      this.renderCamera = camera;
 
-        this.resolution = (resolution !== undefined) ? new Vector2(resolution.x, resolution.y) : new Vector2(256, 256);
+      this.selectedObjects = selectedObjects !== undefined ? selectedObjects : [];
 
-        const pars = { minFilter: LinearFilter, magFilter: LinearFilter, format: RGBAFormat };
+      this.resolution = (resolution !== undefined) ? new Vector2(resolution.x, resolution.y) : new Vector2(256, 256);
 
-        const resx = Math.round(this.resolution.x / this.downSampleRatio);
-        const resy = Math.round(this.resolution.y / this.downSampleRatio);
+      const pars = { minFilter: LinearFilter, magFilter: LinearFilter, format: RGBAFormat };
 
-        this.maskBufferMaterial.side = DoubleSide;
+      const resx = Math.round(this.resolution.x / this.downSampleRatio);
+      const resy = Math.round(this.resolution.y / this.downSampleRatio);
 
-        this.renderTargetMaskBuffer = new WebGLRenderTarget(this.resolution.x, this.resolution.y, pars);
-        this.renderTargetMaskBuffer.texture.name = 'OutlinePass.mask';
-        this.renderTargetMaskBuffer.texture.generateMipmaps = false;
+      this.maskBufferMaterial.side = DoubleSide;
 
-        this.depthMaterial = new MeshDepthMaterial();
-        this.depthMaterial.side = DoubleSide;
-        this.depthMaterial.depthPacking = RGBADepthPacking;
-        this.depthMaterial.blending = NoBlending;
+      this.renderTargetMaskBuffer = new WebGLRenderTarget(this.resolution.x, this.resolution.y, pars);
+      this.renderTargetMaskBuffer.texture.name = 'OutlinePass.mask';
+      this.renderTargetMaskBuffer.texture.generateMipmaps = false;
 
-        this.prepareMaskMaterial = this.getPrepareMaskMaterial();
-        this.prepareMaskMaterial.side = DoubleSide;
-        this.prepareMaskMaterial.fragmentShader = this.replaceDepthToViewZ(this.prepareMaskMaterial.fragmentShader, this.renderCamera);
+      this.depthMaterial = new MeshDepthMaterial();
+      this.depthMaterial.side = DoubleSide;
+      this.depthMaterial.depthPacking = RGBADepthPacking;
+      this.depthMaterial.blending = NoBlending;
 
-        
-        this.renderTargetDepthBuffer = new WebGLRenderTarget(this.resolution.x, this.resolution.y, pars);
-        this.renderTargetDepthBuffer.texture.name = 'OutlinePass.depth';
-        this.renderTargetDepthBuffer.texture.generateMipmaps = false;
+      this.prepareMaskMaterial = this.getPrepareMaskMaterial();
+      this.prepareMaskMaterial.side = DoubleSide;
+      this.prepareMaskMaterial.fragmentShader = this.replaceDepthToViewZ(this.prepareMaskMaterial.fragmentShader, this.renderCamera);
 
-        
-        this.renderTargetMaskDownSampleBuffer = new WebGLRenderTarget(resx, resy, pars);
-        this.renderTargetMaskDownSampleBuffer.texture.name = 'OutlinePass.depthDownSample';
-        this.renderTargetMaskDownSampleBuffer.texture.generateMipmaps = false;
+      
+      this.renderTargetDepthBuffer = new WebGLRenderTarget(this.resolution.x, this.resolution.y, pars);
+      this.renderTargetDepthBuffer.texture.name = 'OutlinePass.depth';
+      this.renderTargetDepthBuffer.texture.generateMipmaps = false;
 
-        
-        this.renderTargetBlurBuffer1 = new WebGLRenderTarget(resx, resy, pars);
-        this.renderTargetBlurBuffer1.texture.name = 'OutlinePass.blur1';
-        this.renderTargetBlurBuffer1.texture.generateMipmaps = false;
-        this.renderTargetBlurBuffer2 = new WebGLRenderTarget(Math.round(resx / 2), Math.round(resy / 2), pars);
-        this.renderTargetBlurBuffer2.texture.name = 'OutlinePass.blur2';
-        this.renderTargetBlurBuffer2.texture.generateMipmaps = false;
+      
+      this.renderTargetMaskDownSampleBuffer = new WebGLRenderTarget(resx, resy, pars);
+      this.renderTargetMaskDownSampleBuffer.texture.name = 'OutlinePass.depthDownSample';
+      this.renderTargetMaskDownSampleBuffer.texture.generateMipmaps = false;
 
-        this.edgeDetectionMaterial = this.getEdgeDetectionMaterial();
-        this.renderTargetEdgeBuffer1 = new WebGLRenderTarget(resx, resy, pars);
-        this.renderTargetEdgeBuffer1.texture.name = 'OutlinePass.edge1';
-        this.renderTargetEdgeBuffer1.texture.generateMipmaps = false;
-        this.renderTargetEdgeBuffer2 = new WebGLRenderTarget(Math.round(resx / 2), Math.round(resy / 2), pars);
-        this.renderTargetEdgeBuffer2.texture.name = 'OutlinePass.edge2';
-        this.renderTargetEdgeBuffer2.texture.generateMipmaps = false;
+      
+      this.renderTargetBlurBuffer1 = new WebGLRenderTarget(resx, resy, pars);
+      this.renderTargetBlurBuffer1.texture.name = 'OutlinePass.blur1';
+      this.renderTargetBlurBuffer1.texture.generateMipmaps = false;
+      this.renderTargetBlurBuffer2 = new WebGLRenderTarget(Math.round(resx / 2), Math.round(resy / 2), pars);
+      this.renderTargetBlurBuffer2.texture.name = 'OutlinePass.blur2';
+      this.renderTargetBlurBuffer2.texture.generateMipmaps = false;
 
-        const MAX_EDGE_THICKNESS = 4;
-        const MAX_EDGE_GLOW = 4;
+      this.edgeDetectionMaterial = this.getEdgeDetectionMaterial();
+      this.renderTargetEdgeBuffer1 = new WebGLRenderTarget(resx, resy, pars);
+      this.renderTargetEdgeBuffer1.texture.name = 'OutlinePass.edge1';
+      this.renderTargetEdgeBuffer1.texture.generateMipmaps = false;
+      this.renderTargetEdgeBuffer2 = new WebGLRenderTarget(Math.round(resx / 2), Math.round(resy / 2), pars);
+      this.renderTargetEdgeBuffer2.texture.name = 'OutlinePass.edge2';
+      this.renderTargetEdgeBuffer2.texture.generateMipmaps = false;
 
-        this.separableBlurMaterial1 = this.getSeperableBlurMaterial(MAX_EDGE_THICKNESS);
-        this.separableBlurMaterial1.uniforms['texSize'].value.set(resx, resy);
-        this.separableBlurMaterial1.uniforms['kernelRadius'].value = 1;
-        this.separableBlurMaterial2 = this.getSeperableBlurMaterial(MAX_EDGE_GLOW);
-        this.separableBlurMaterial2.uniforms['texSize'].value.set(Math.round( resx / 2), Math.round(resy / 2) );
-        this.separableBlurMaterial2.uniforms['kernelRadius'].value = MAX_EDGE_GLOW;
+      const MAX_EDGE_THICKNESS = 4;
+      const MAX_EDGE_GLOW = 4;
 
-        this.overlayMaterial = this.getOverlayMaterial();
+      this.separableBlurMaterial1 = this.getSeperableBlurMaterial(MAX_EDGE_THICKNESS);
+      this.separableBlurMaterial1.uniforms['texSize'].value.set(resx, resy);
+      this.separableBlurMaterial1.uniforms['kernelRadius'].value = 1;
+      this.separableBlurMaterial2 = this.getSeperableBlurMaterial(MAX_EDGE_GLOW);
+      this.separableBlurMaterial2.uniforms['texSize'].value.set(Math.round( resx / 2), Math.round(resy / 2) );
+      this.separableBlurMaterial2.uniforms['kernelRadius'].value = MAX_EDGE_GLOW;
 
-        // copy material
-        const copyShader = new CopyShader;
+      this.overlayMaterial = this.getOverlayMaterial();
 
-        this.copyUniforms = UniformsUtils.clone(copyShader.uniforms);
-        this.copyUniforms['opacity'].value = 1.0;
+      // copy material
+      const copyShader = new CopyShader;
 
-        this.materialCopy = new ShaderMaterial({
-            uniforms: this.copyUniforms,
-            vertexShader: copyShader.vertexShader,
-            fragmentShader: copyShader.fragmentShader,
-            blending: NoBlending,
-            depthTest: false,
-            depthWrite: false,
-            transparent: true
-        });
+      this.copyUniforms = UniformsUtils.clone(copyShader.uniforms);
+      this.copyUniforms['opacity'].value = 1.0;
 
-        this.enabled = true;
-        this.needsSwap = false;
-    }
+      this.materialCopy = new ShaderMaterial({
+          uniforms: this.copyUniforms,
+          vertexShader: copyShader.vertexShader,
+          fragmentShader: copyShader.fragmentShader,
+          blending: NoBlending,
+          depthTest: false,
+          depthWrite: false,
+          transparent: true
+      });
 
-    getPrepareMaskMaterial() {
+      this.enabled = true;
+      this.needsSwap = false;
+  }
+
+
+  getPrepareMaskMaterial(): ShaderMaterial {
 		return new ShaderMaterial( {
 			uniforms: {
 				'depthTexture': { value: null },
@@ -212,12 +214,12 @@ export class OutlinePass extends Pass {
 
 				'}'
 			].join('\n')
-		} );
+		});
 	}
 
-    getEdgeDetectionMaterial() {
-		return new ShaderMaterial( {
 
+  getEdgeDetectionMaterial(): ShaderMaterial {
+		return new ShaderMaterial( {
 			uniforms: {
 				'maskTexture': { value: null },
 				'texSize': { value: new Vector2(0.5, 0.5) },
@@ -255,12 +257,12 @@ export class OutlinePass extends Pass {
 					vec3 edgeColor = 1.0 - visibilityFactor > 0.001 ? visibleEdgeColor : hiddenEdgeColor;\
 					gl_FragColor = vec4(edgeColor, 1.0) * vec4(d);\
 				}'
-		} );
+		});
 	}
 
-    getSeperableBlurMaterial(maxRadius: number) {
-		return new ShaderMaterial( {
 
+  getSeperableBlurMaterial(maxRadius: number): ShaderMaterial {
+		return new ShaderMaterial( {
 			defines: {
 				'MAX_RADIUS': maxRadius,
 			},
@@ -306,12 +308,12 @@ export class OutlinePass extends Pass {
 					}\
 					gl_FragColor = diffuseSum/weightSum;\
 				}'
-		} );
+		});
 	}
 
-    getOverlayMaterial() {
-		return new ShaderMaterial( {
 
+  getOverlayMaterial(): ShaderMaterial {
+		return new ShaderMaterial( {
 			uniforms: {
 				'maskTexture': { value: null },
 				'edgeTexture1': { value: null },
@@ -351,20 +353,23 @@ export class OutlinePass extends Pass {
 						finalColor += + visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
 					gl_FragColor = finalColor;\
 				}',
+
 			blending: AdditiveBlending,
 			depthTest: false,
 			depthWrite: false,
 			transparent: true
-		} );
+		});
 	}
 
-    replaceDepthToViewZ(str: string, camera: Camera) {
+
+  replaceDepthToViewZ(str: string, camera: Camera): string {
 		const type = camera instanceof PerspectiveCamera ? 'perspective' : 'orthographic';
 
 		return str.replace(/DEPTH_TO_VIEW_Z/g, type + 'DepthToViewZ');
 	}
 
-	dispose() {
+
+	dispose(): void {
 		this.renderTargetMaskBuffer.dispose();
 		this.renderTargetDepthBuffer.dispose();
 		this.renderTargetMaskDownSampleBuffer.dispose();
@@ -374,7 +379,8 @@ export class OutlinePass extends Pass {
 		this.renderTargetEdgeBuffer2.dispose();
 	}
 
-    setSize(width: number, height: number) {
+
+  setSize(width: number, height: number): void {
 		this.renderTargetMaskBuffer.setSize(width, height);
 
 		var resx = Math.round(width / this.downSampleRatio);
@@ -393,7 +399,8 @@ export class OutlinePass extends Pass {
 		this.separableBlurMaterial2.uniforms['texSize'].value.set(resx, resy);
 	}
 
-    changeVisibilityOfSelectedObjects(visible: boolean) {
+
+  changeVisibilityOfSelectedObjects(visible: boolean): void {
 		const cache = this._visibilityCache;
 
 		const gatherSelectedMeshesCallBack = (object: any) => {
@@ -414,7 +421,8 @@ export class OutlinePass extends Pass {
 
 	}
 
-	changeVisibilityOfNonSelectedObjects (visible: boolean) {
+
+	changeVisibilityOfNonSelectedObjects(visible: boolean): void {
 		const cache = this._visibilityCache;
 		const selectedMeshes: any[] = [];
 
@@ -468,17 +476,21 @@ export class OutlinePass extends Pass {
 		this.renderScene.traverse(visibilityChangeCallBack);
 	}
 
-	updateTextureMatrix() {
+
+	updateTextureMatrix(): void {
 		this.textureMatrix.set(
-            0.5, 0.0, 0.0, 0.5,
+      0.5, 0.0, 0.0, 0.5,
 			0.0, 0.5, 0.0, 0.5,
 			0.0, 0.0, 0.5, 0.5,
-			0.0, 0.0, 0.0, 1.0);
+			0.0, 0.0, 0.0, 1.0
+    );
+
 		this.textureMatrix.multiply(this.renderCamera.projectionMatrix);
 		this.textureMatrix.multiply(this.renderCamera.matrixWorldInverse);
 	}
 
-	render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime?: number, maskActive?: boolean) {
+
+	render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime?: number, maskActive?: boolean): void {
 		if (this.selectedObjects.length > 0) {
 			renderer.getClearColor(this._oldClearColor);
 			this.oldClearAlpha = renderer.getClearAlpha();
@@ -518,7 +530,7 @@ export class OutlinePass extends Pass {
 
 			this.prepareMaskMaterial.uniforms['cameraNearFar'].value.set(this.renderCamera.near, this.renderCamera.far);
 			
-            this.prepareMaskMaterial.uniforms['depthTexture'].value = this.renderTargetDepthBuffer.texture;
+      this.prepareMaskMaterial.uniforms['depthTexture'].value = this.renderTargetDepthBuffer.texture;
 			this.prepareMaskMaterial.uniforms['textureMatrix'].value = this.textureMatrix;
 			renderer.setRenderTarget(this.renderTargetMaskBuffer);
 			renderer.clear();
@@ -594,8 +606,8 @@ export class OutlinePass extends Pass {
 
 
 			if (maskActive) {
-                renderer.state.buffers.stencil.setTest(true);
-            }
+        renderer.state.buffers.stencil.setTest(true);
+      }
 
 			renderer.setRenderTarget(readBuffer);
 			this.fsQuad.render(renderer);

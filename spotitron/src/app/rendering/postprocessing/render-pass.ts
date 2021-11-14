@@ -6,30 +6,32 @@ import { Pass } from './pass';
 
 export class RenderPass extends Pass {
 
-    scene: THREE.Scene;
-    camera: THREE.Camera;
-    overrideMaterial: THREE.ShaderMaterial | undefined;
-    clearColor: THREE.Color | undefined;
-    clearAlpha: number | undefined;
+  scene: THREE.Scene;
+  camera: THREE.Camera;
+  overrideMaterial: THREE.ShaderMaterial | undefined;
+  clearColor: THREE.Color | undefined;
+  clearAlpha: number | undefined;
 
-    clear = true;
-    clearDepth = false;
-    needsSwap = false;
-    _oldClearColor = new Color();
-    
-    constructor(scene: THREE.Scene, camera: THREE.Camera, overrideMaterial?: THREE.ShaderMaterial, clearColor?: THREE.Color, clearAlpha?: number) {
-        super();
+  clear = true;
+  clearDepth = false;
+  needsSwap = false;
+  _oldClearColor = new Color();
+  
+  
+  constructor(scene: THREE.Scene, camera: THREE.Camera, overrideMaterial?: THREE.ShaderMaterial, clearColor?: THREE.Color, clearAlpha?: number) {
+      super();
 
-        this.scene = scene;
-        this.camera = camera;
-    
-        this.overrideMaterial = overrideMaterial;
-    
-        this.clearColor = clearColor;
-        this.clearAlpha = (clearAlpha !== undefined) ? clearAlpha : 0;
-    }
+      this.scene = scene;
+      this.camera = camera;
+  
+      this.overrideMaterial = overrideMaterial;
+  
+      this.clearColor = clearColor;
+      this.clearAlpha = (clearAlpha !== undefined) ? clearAlpha : 0;
+  }
 
-    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime?: number, maskActive?: boolean) {
+
+  render(renderer: WebGLRenderer, _writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, _deltaTime?: number, _maskActive?: boolean): void {
 		let oldAutoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
@@ -53,8 +55,8 @@ export class RenderPass extends Pass {
 		renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
 
 		if (this.clear) {
-            renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
-        } 
+      renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+    } 
 
 		renderer.render(this.scene, this.camera);
 
@@ -69,6 +71,7 @@ export class RenderPass extends Pass {
 		renderer.autoClear = oldAutoClear;
 	}
 
-    setSize(width: number, height: number): void {
-    }
+
+  setSize(_width: number, _height: number): void {
+  }
 }
