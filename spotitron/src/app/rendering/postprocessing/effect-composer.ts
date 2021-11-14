@@ -3,7 +3,7 @@ import {
 	LinearFilter,
 	RGBAFormat,
 	Vector2,
-    WebGLRenderer,
+  WebGLRenderer,
 	WebGLRenderTarget
 } from 'three';
 
@@ -13,75 +13,80 @@ import { ShaderPass } from './shader-pass';
 
 
 export class EffectComposer {
-    renderer: WebGLRenderer;
-    renderTarget1: WebGLRenderTarget;
-    renderTarget2: WebGLRenderTarget;
 
-    writeBuffer: WebGLRenderTarget;
-    readBuffer: WebGLRenderTarget;
+  renderer: WebGLRenderer;
+  renderTarget1: WebGLRenderTarget;
+  renderTarget2: WebGLRenderTarget;
 
-    _pixelRatio: number;
-    _width: number;
-    _height: number;
-    
-    renderToScreen = true;
-    passes: Pass[] = [];
+  writeBuffer: WebGLRenderTarget;
+  readBuffer: WebGLRenderTarget;
 
-    copyPass: ShaderPass;
+  _pixelRatio: number;
+  _width: number;
+  _height: number;
+  
+  renderToScreen = true;
+  passes: Pass[] = [];
 
-    clock = new Clock();
+  copyPass: ShaderPass;
+
+  clock = new Clock();
 
 
-    constructor(renderer: WebGLRenderer, renderTarget?: WebGLRenderTarget ) {
-        this.renderer = renderer;
+  constructor(renderer: WebGLRenderer, renderTarget?: WebGLRenderTarget ) {
+    this.renderer = renderer;
 
-        if (renderTarget === undefined) {
-            const parameters = {
-                minFilter: LinearFilter,
-                magFilter: LinearFilter,
-                format: RGBAFormat
-            };
+    if (renderTarget === undefined) {
+      const parameters = {
+        minFilter: LinearFilter,
+        magFilter: LinearFilter,
+        format: RGBAFormat
+      };
 
-            const size = renderer.getSize(new Vector2());
-            this._pixelRatio = renderer.getPixelRatio();
-            this._width = size.width;
-            this._height = size.height;
+      const size = renderer.getSize(new Vector2());
+      this._pixelRatio = renderer.getPixelRatio();
+      this._width = size.width;
+      this._height = size.height;
 
-            renderTarget = new WebGLRenderTarget(this._width * this._pixelRatio, this._height * this._pixelRatio, parameters);
-            renderTarget.texture.name = 'EffectComposer.rt1';
-        } else {
-            this._pixelRatio = 1;
-            this._width = renderTarget.width;
-            this._height = renderTarget.height;
-        }
-
-        this.renderTarget1 = renderTarget;
-        this.renderTarget2 = renderTarget.clone();
-        this.renderTarget2.texture.name = 'EffectComposer.rt2';
-
-        this.writeBuffer = this.renderTarget1;
-        this.readBuffer = this.renderTarget2;
-
-        this.copyPass = new ShaderPass(new CopyShader);
+      renderTarget = new WebGLRenderTarget(this._width * this._pixelRatio, this._height * this._pixelRatio, parameters);
+      renderTarget.texture.name = 'EffectComposer.rt1';
+    } else {
+      this._pixelRatio = 1;
+      this._width = renderTarget.width;
+      this._height = renderTarget.height;
     }
 
-    swapBuffers() {
+    this.renderTarget1 = renderTarget;
+    this.renderTarget2 = renderTarget.clone();
+    this.renderTarget2.texture.name = 'EffectComposer.rt2';
+
+    this.writeBuffer = this.renderTarget1;
+    this.readBuffer = this.renderTarget2;
+
+    this.copyPass = new ShaderPass(new CopyShader);
+  }
+
+
+  swapBuffers(): void {
 		let tmp = this.readBuffer;
 		this.readBuffer = this.writeBuffer;
 		this.writeBuffer = tmp;
 	}
 
-	addPass(pass: Pass) {
+
+	addPass(pass: Pass): void {
 		this.passes.push(pass);
 		pass.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
 	}
 
-	insertPass(pass: Pass, index: number) {
+
+	insertPass(pass: Pass, index: number): void {
 		this.passes.splice(index, 0, pass);
 		pass.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
 	}
 
-	removePass(pass: Pass) {
+
+	removePass(pass: Pass): void {
 		const index = this.passes.indexOf(pass);
 
 		if (index !== - 1) {
@@ -89,7 +94,8 @@ export class EffectComposer {
 		}
 	}
 
-	isLastEnabledPass(passIndex: number) {
+
+	isLastEnabledPass(passIndex: number): boolean {
 		for (let i = passIndex + 1; i < this.passes.length; i++) {
 			if (this.passes[i].enabled) {
 				return false;
@@ -99,8 +105,9 @@ export class EffectComposer {
 		return true;
 	}
 
-    // deltaTime value is in seconds
-	render (deltaTime?: number) {
+
+  // deltaTime value is in seconds
+	render (deltaTime?: number): void {
 		if (deltaTime === undefined) {
 			deltaTime = this.clock.getDelta();
 		}
@@ -114,14 +121,13 @@ export class EffectComposer {
 			const pass = this.passes[i];
 
 			if (pass.enabled === false) {
-                continue
-            }
+        continue;
+      }
 
 			pass.renderToScreen = (this.renderToScreen && this.isLastEnabledPass(i));
 			pass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime, maskActive);
 
 			if (pass.needsSwap) {
-
 				if (maskActive) {
 					let context = this.renderer.getContext();
 					let stencil = this.renderer.state.buffers.stencil;
@@ -133,17 +139,17 @@ export class EffectComposer {
 
 					//context.stencilFunc( context.EQUAL, 1, 0xffffffff );
 					stencil.setFunc(context.EQUAL, 1, 0xffffffff);
-
 				}
 
 				this.swapBuffers();
 			}
 		}
 		
-        this.renderer.setRenderTarget(currentRenderTarget);
+    this.renderer.setRenderTarget(currentRenderTarget);
 	}
 
-	reset(renderTarget: WebGLRenderTarget) {
+
+	reset(renderTarget: WebGLRenderTarget): void {
 		if (renderTarget === undefined) {
 			let size = this.renderer.getSize(new Vector2());
 			this._pixelRatio = this.renderer.getPixelRatio();
@@ -163,7 +169,8 @@ export class EffectComposer {
 		this.readBuffer = this.renderTarget2;
 	}
 
-	setSize(width: number, height: number) {
+
+	setSize(width: number, height: number): void {
 		this._width = width;
 		this._height = height;
 
@@ -178,7 +185,8 @@ export class EffectComposer {
 		}
 	}
 
-	setPixelRatio(pixelRatio: number) {
+
+	setPixelRatio(pixelRatio: number): void {
 		this._pixelRatio = pixelRatio;
 		this.setSize(this._width, this._height);
 	}

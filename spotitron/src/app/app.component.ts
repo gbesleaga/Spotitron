@@ -14,35 +14,40 @@ export class AppComponent implements AfterViewInit, AfterContentInit {
   hideUI = false;
   quality: Quality = "Low";
 
+  
   constructor(private renderingService: RenderingService,
     private animationService: AnimationService,
     private countrySelectionService: CountrySelectionService) {
-      // no need to clear
-      this.countrySelectionService.getSelectedCountry().subscribe( () => {
-        this.hideUI = true;
-      });
+    // no need to clear
+    this.countrySelectionService.getSelectedCountry().subscribe(() => {
+      this.hideUI = true;
+    });
 
-      this.countrySelectionService.onClearSelection().subscribe( () => {
-        this.hideUI = false;
-      });
+    this.countrySelectionService.onClearSelection().subscribe(() => {
+      this.hideUI = false;
+    });
   }
+
 
   ngAfterViewInit() {
     this.renderingService.init();
     this.animationService.animate();
   }
 
+
   ngAfterContentInit() {
     // get autodetected quality
     this.quality = this.renderingService.getQuality();
   }
 
-  onLowQualitySelected() {
+
+  onLowQualitySelected(): void {
     this.quality = 'Low';
     this.renderingService.setQuality(this.quality);
   }
 
-  onStandardQualitySelected() {
+
+  onStandardQualitySelected(): void {
     this.quality = 'Standard';
     this.renderingService.setQuality(this.quality);
   }

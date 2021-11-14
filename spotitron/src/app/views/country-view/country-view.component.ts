@@ -1,4 +1,4 @@
-import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
+import { Component, ComponentFactoryResolver, ViewChild } from '@angular/core';
 import { NotificationsService, NotificationType } from 'notifications-lib';
 import { Subscription } from 'rxjs';
 import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject, SpotifySimplifiedPlaylistObject, SpotifyTrackObject } from 'spotify-lib';
@@ -23,7 +23,7 @@ interface DisplayTrack {
   artist: string;
 
   audio: HTMLAudioElement | undefined;
-  
+
   stateDisplay: string;
   showState: boolean;
 
@@ -36,12 +36,12 @@ interface DisplayTrack {
   templateUrl: './country-view.component.html',
   styleUrls: ['./country-view.component.css']
 })
-export class CountryViewComponent implements OnInit {
+export class CountryViewComponent {
 
   show: boolean = false;
   chartName: string = "";
   displayTracks: DisplayTrack[] = [];
-  displayChartTitle: DisplayChartTitle = {showState: false, following: 'unknown', followingText: ''};
+  displayChartTitle: DisplayChartTitle = { showState: false, following: 'unknown', followingText: '' };
 
   currentlyPlayingTrackIndex: number = -1;
 
@@ -56,7 +56,8 @@ export class CountryViewComponent implements OnInit {
   // mobile
   private previouslySelectedTrackIndex: number = -1;
 
-  @ViewChild(ContextMenuDirective, {static: true}) contextMenuHost: ContextMenuDirective | undefined;
+  @ViewChild(ContextMenuDirective, { static: true }) contextMenuHost: ContextMenuDirective | undefined;
+
 
   constructor(
     private countrySelectionService: CountrySelectionService,
@@ -68,88 +69,93 @@ export class CountryViewComponent implements OnInit {
     private notificationService: NotificationsService,
     private mobileService: MobileService) {
 
-      if (this.mobileService.isOnMobile()) {
-        this.displayChartTitle.showState = true; // always visible on mobile
-      }
-
-      this.playlistsOfCurrentUser = this.spotifyUserService.getUserOwnedPlaylists();
-
-      this.countrySelectionService.getSelectedCountry().subscribe( country => {
-        this.countryChart = this.countryDataService.getChartDataForCountry(country);
-      
-        if (this.countryChart) {
-          this.show = true;
-          this.chartName = this.countryChart.name;
-          this.displayChartTitle.following = 'unknown';
-          this.displayChartTitle.followingText = '';
-
-          this.displayTracks = [];
-          const tracks: SpotifyPlaylistTrackObject[] = this.countryChart.tracks.items as SpotifyPlaylistTrackObject[];
-
-          for (let t of tracks) {
-            const dt = {
-              name: this.getDisplayTrackName(t.track),
-              artist: this.getDisplayTrackArtist(t.track),
-              audio: this.getDisplayTrackAudio(t.track),
-              playing: false,
-              stateDisplay: 'play',
-              showState: false,
-            }
-
-            this.displayTracks.push(dt);
-          }
-
-          // get following state
-          this.getChartFollowingState();  
-
-        } else {
-          this.onLeaveView();
-        }
-      });
-  }
-
-  private getChartFollowingState() {
-    this.spotifyService.areFollowingPlaylist({
-      accessToken: this.authService.getAccessToken(), 
-      playlistId: this.countryChart!.id, 
-      userIds: [this.spotifyUserService.getUserId()]}).subscribe(
-        response => {
-          if (response[0] === true) {
-            this.displayChartTitle.following = 'yes'
-            this.displayChartTitle.followingText = '❤';
-          } else {
-            this.displayChartTitle.following = 'no';
-            this.displayChartTitle.followingText = '';
-          }
-        },
-        err => {
-          console.log("Failed to retrieve follow state.");
-        }
-      );
-  }
-
-  ngOnInit(): void {
-  }
-
-  onChartTitleHoverEnter() {
     if (this.mobileService.isOnMobile()) {
-      return; //no-op on mobile
+      this.displayChartTitle.showState = true; // always visible on mobile
+    }
+
+    this.playlistsOfCurrentUser = this.spotifyUserService.getUserOwnedPlaylists();
+
+    this.countrySelectionService.getSelectedCountry().subscribe(country => {
+      this.countryChart = this.countryDataService.getChartDataForCountry(country);
+
+      if (this.countryChart) {
+        this.show = true;
+        this.chartName = this.countryChart.name;
+        this.displayChartTitle.following = 'unknown';
+        this.displayChartTitle.followingText = '';
+
+        this.displayTracks = [];
+        const tracks: SpotifyPlaylistTrackObject[] = this.countryChart.tracks.items as SpotifyPlaylistTrackObject[];
+
+        for (let t of tracks) {
+          const dt = {
+            name: this.getDisplayTrackName(t.track),
+            artist: this.getDisplayTrackArtist(t.track),
+            audio: this.getDisplayTrackAudio(t.track),
+            playing: false,
+            stateDisplay: 'play',
+            showState: false,
+          }
+
+          this.displayTracks.push(dt);
+        }
+
+        // get following state
+        this.fetchChartFollowingState();
+
+      } else {
+        this.onLeaveView();
+      }
+    });
+  }
+
+
+  private fetchChartFollowingState(): void {
+    this.spotifyService.areFollowingPlaylist({
+      accessToken: this.authService.getAccessToken(),
+      playlistId: this.countryChart!.id,
+      userIds: [this.spotifyUserService.getUserId()]
+    }).subscribe(
+      response => {
+        if (response[0] === true) {
+          this.displayChartTitle.following = 'yes'
+          this.displayChartTitle.followingText = '❤';
+        } else {
+          this.displayChartTitle.following = 'no';
+          this.displayChartTitle.followingText = '';
+        }
+      },
+      err => {
+        console.log("Failed to retrieve follow state.");
+      }
+    );
+  }
+
+
+  onChartTitleHoverEnter(): void {
+    if (this.mobileService.isOnMobile()) {
+      // no-op on mobile
+      return; 
     }
 
     this.displayChartTitle.showState = true;
   }
 
-  onChartTitleHoverLeave() {
+
+  onChartTitleHoverLeave(): void {
     if (this.mobileService.isOnMobile()) {
-      return; //no-op on mobile
+      // no-op on mobile
+      return; 
     }
 
     this.displayChartTitle.showState = false;
   }
 
-  onDisplayTrackHoverEnter(index: number) {
+
+  onDisplayTrackHoverEnter(index: number): void {
     if (this.mobileService.isOnMobile()) {
-      return; //no-op on mobile
+      // no-op on mobile
+      return;
     }
 
     if (this.displayTracks[index].playing) {
@@ -159,9 +165,11 @@ export class CountryViewComponent implements OnInit {
     this.displayTracks[index].showState = true;
   }
 
-  onDisplayTrackHoverLeave(index: number) {
+
+  onDisplayTrackHoverLeave(index: number): void {
     if (this.mobileService.isOnMobile()) {
-      return; //no-op on mobile
+      // no-op on mobile
+      return; 
     }
 
     if (this.displayTracks[index].playing) {
@@ -171,9 +179,11 @@ export class CountryViewComponent implements OnInit {
     }
   }
 
-  onDisplayTrackClicked(index: number) {
+
+  onDisplayTrackClicked(index: number): void {
     if (!this.mobileService.isOnMobile()) {
-      return; //no-op on desktop
+      // no-op on desktop
+      return; 
     }
 
     // disable previous
@@ -188,7 +198,8 @@ export class CountryViewComponent implements OnInit {
     this.previouslySelectedTrackIndex = index;
   }
 
-  onDisplayTrackBlur(index: number) {
+
+  onDisplayTrackBlur(index: number): void {
     if (index < 0) {
       return;
     }
@@ -200,7 +211,8 @@ export class CountryViewComponent implements OnInit {
     }
   }
 
-  togglePlay(index: number, e: MouseEvent) {
+
+  togglePlay(index: number, e: MouseEvent): void {
     e.stopPropagation();
 
     // what to do
@@ -223,14 +235,16 @@ export class CountryViewComponent implements OnInit {
     }
   }
 
-  private pauseActiveTrack() {
+
+  private pauseActiveTrack(): void {
     if (this.currentlyPlayingTrackIndex >= 0) {
       this.displayTracks[this.currentlyPlayingTrackIndex].showState = false;
       this.pauseTrack(this.currentlyPlayingTrackIndex);
     }
   }
 
-  private playTrack(index: number) {
+
+  private playTrack(index: number): void {
     const track = this.displayTracks[index];
 
     track.playing = true;
@@ -240,7 +254,8 @@ export class CountryViewComponent implements OnInit {
     this.currentlyPlayingTrackIndex = index;
   }
 
-  private pauseTrack(index: number) {
+
+  private pauseTrack(index: number): void {
     const track = this.displayTracks[index];
 
     track.playing = false;
@@ -250,7 +265,8 @@ export class CountryViewComponent implements OnInit {
     this.currentlyPlayingTrackIndex = -1;
   }
 
-  openChartMoreMenu(e: MouseEvent) {
+
+  openChartMoreMenu(e: MouseEvent): void {
     e.stopPropagation();
 
     this.showMenu = true;
@@ -260,23 +276,25 @@ export class CountryViewComponent implements OnInit {
     }
   }
 
-  openTrackMoreMenu(index: number, e: MouseEvent) {
+
+  openTrackMoreMenu(index: number, e: MouseEvent): void {
     e.stopPropagation();
 
     this.showMenu = true;
 
     if (this.showMenu) {
       // should always be enough space to the left
-      const posLeft = e.pageX - 150 - 10; 
+      const posLeft = e.pageX - 150 - 10;
 
       // pop bottom if enough space, otherwise pop top
-      const posTop = ((window.innerHeight - e.pageY - 20 - 50) > 0)? e.pageY + 10: e.pageY - 50;
+      const posTop = ((window.innerHeight - e.pageY - 20 - 50) > 0) ? e.pageY + 10 : e.pageY - 50;
 
       this.prepareTrackMenu(index, posTop, posLeft);
     }
   }
 
-  private prepareChartMenu(posTop: number, posLeft: number) {
+
+  private prepareChartMenu(posTop: number, posLeft: number): void {
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
 
     if (!this.contextMenuHost) {
@@ -294,12 +312,12 @@ export class CountryViewComponent implements OnInit {
     }
 
     const items = [];
-    
+
     if (this.displayChartTitle.following === 'no') {
       items.push({
-        text: 'Follow', 
+        text: 'Follow',
         action: () => {
-          this.spotifyService.followPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id}).subscribe(
+          this.spotifyService.followPlaylist({ accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id }).subscribe(
             () => {
               this.displayChartTitle.following = 'yes';
               this.displayChartTitle.followingText = '❤';
@@ -308,7 +326,7 @@ export class CountryViewComponent implements OnInit {
               this.displayChartTitle.following = 'unknown';
               this.displayChartTitle.followingText = '';
 
-              this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to follow chart.'});
+              this.notificationService.notify({ type: NotificationType.ERROR, msg: 'Failed to follow chart.' });
             }
           );
 
@@ -318,9 +336,9 @@ export class CountryViewComponent implements OnInit {
       });
     } else if (this.displayChartTitle.following === 'yes') {
       items.push({
-        text: 'Unfollow', 
+        text: 'Unfollow',
         action: () => {
-          this.spotifyService.unfollowPlaylist({accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id}).subscribe(
+          this.spotifyService.unfollowPlaylist({ accessToken: this.authService.getAccessToken(), playlistId: this.countryChart!.id }).subscribe(
             () => {
               this.displayChartTitle.following = 'no';
               this.displayChartTitle.followingText = '';
@@ -328,7 +346,7 @@ export class CountryViewComponent implements OnInit {
             err => {
               this.displayChartTitle.following = 'unknown';
               this.displayChartTitle.followingText = '';
-              this.notificationService.notify({type: NotificationType.ERROR, msg: 'Failed to unfollow chart.'});
+              this.notificationService.notify({ type: NotificationType.ERROR, msg: 'Failed to unfollow chart.' });
             }
           );
 
@@ -338,7 +356,7 @@ export class CountryViewComponent implements OnInit {
       });
     } else {
       items.push({
-        text: 'Nothing here...', 
+        text: 'Nothing here...',
         action: () => {
         }
       });
@@ -353,7 +371,8 @@ export class CountryViewComponent implements OnInit {
     componentRef.instance.menu.left = posLeft;
   }
 
-  private prepareTrackMenu(trackIndex: number, posTop: number, posLeft: number) {
+
+  private prepareTrackMenu(trackIndex: number, posTop: number, posLeft: number): void {
 
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(ContextMenuComponent);
 
@@ -393,10 +412,10 @@ export class CountryViewComponent implements OnInit {
             trackIds: [trackId]
           }).subscribe(
             () => {
-              this.notificationService.notify({type: NotificationType.INFO, msg: "Track added to " + p.name});
+              this.notificationService.notify({ type: NotificationType.INFO, msg: "Track added to " + p.name });
             },
             err => {
-              this.notificationService.notify({type: NotificationType.ERROR, msg: "Failed to add track to " + p.name});
+              this.notificationService.notify({ type: NotificationType.ERROR, msg: "Failed to add track to " + p.name });
             }
           );
 
@@ -414,7 +433,7 @@ export class CountryViewComponent implements OnInit {
     } else {
       submenuTop = -20 - playlistMenuItems.length * 40;
     }
-    
+
     const submenuLeft = 0;
 
     const addToPlaylistMenu = {
@@ -435,13 +454,15 @@ export class CountryViewComponent implements OnInit {
     componentRef.instance.menu.left = posLeft;
   }
 
-  closeMoreMenu(e: MouseEvent) {
+
+  closeMoreMenu(e: MouseEvent): void {
     e.stopPropagation();
 
     this.showMenu = false;
   }
 
-  onLeaveView() {
+
+  onLeaveView(): void {
     this.show = false;
     this.countrySelectionService.clearSelection();
     this.pauseActiveTrack();
@@ -450,20 +471,22 @@ export class CountryViewComponent implements OnInit {
     const container = document.getElementById("tracks-container");
     if (container) {
       container.scrollTop = 0;
-    } 
+    }
   }
 
-  private getDisplayTrackName(track: SpotifyTrackObject) {
+
+  private getDisplayTrackName(track: SpotifyTrackObject): string {
     return track.name;
   }
 
-  private getDisplayTrackArtist(track: SpotifyTrackObject) {
+
+  private getDisplayTrackArtist(track: SpotifyTrackObject): string {
     let artistConcat = '';
 
     if (track.artists.length === 0) {
       return artistConcat;
     }
-    
+
     for (let i = 0; i < track.artists.length - 1; ++i) {
       artistConcat += track.artists[i].name + ', ';
     }
@@ -473,8 +496,9 @@ export class CountryViewComponent implements OnInit {
     return artistConcat;
   }
 
-  private getDisplayTrackAudio(track: SpotifyTrackObject) {
-    if(track.preview_url) {
+
+  private getDisplayTrackAudio(track: SpotifyTrackObject): HTMLAudioElement | undefined {
+    if (track.preview_url) {
       const audio = new Audio(track.preview_url);
       audio.loop = true;
       return audio;

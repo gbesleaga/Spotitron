@@ -8,22 +8,25 @@ import { Router, CanActivate } from '@angular/router';
 import { CountryDataService } from './country-data.service'
 import { SpotifyUserService } from './spotify-user.service';
 
-@Injectable({providedIn: 'root'})
-export class DataGuardService implements CanActivate {  
+@Injectable({ providedIn: 'root' })
+export class DataGuardService implements CanActivate {
 
+  // if can't activate route, then reroute here
   cantActivateRoute = '';
 
   constructor(public countryDataService: CountryDataService,
     public spotifyUserService: SpotifyUserService,
-    public router: Router) {}
-  
-  setCantActivateReroute(route: string) {
+    public router: Router) { }
+
+
+  setCantActivateReroute(route: string): void {
     this.cantActivateRoute = route;
   }
-  
+
+
   canActivate(): boolean {
     if (!this.countryDataService.isChartDataReady() ||
-        !this.spotifyUserService.isReady()) {
+      !this.spotifyUserService.isReady()) {
       this.router.navigate([this.cantActivateRoute]);
       return false;
     }

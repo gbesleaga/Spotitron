@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 export interface MenuItem {
   text: string;
@@ -40,27 +40,24 @@ export interface MenuDisplayer {
   templateUrl: './context-menu.component.html',
   styleUrls: ['./context-menu.component.css']
 })
-export class ContextMenuComponent implements OnInit, MenuDisplayer {
-  @Input() menu: Menu = {show: false, top: 0, left: 0, items: [], children: []};
+export class ContextMenuComponent implements MenuDisplayer {
+  @Input() menu: Menu = { show: false, top: 0, left: 0, items: [], children: [] };
 
   activeItem: PlaceholderMenuItem | undefined = undefined;
-  
-  constructor() { }
 
-  ngOnInit(): void {
-  }
 
-  menuAction(item: MenuItem, e: MouseEvent) {
+  menuAction(item: MenuItem, e: MouseEvent): void {
     e.stopPropagation();
-    
+
     if (instanceOfActionMenuItem(item)) {
       item.action();
     }
   }
 
-  submenuOpen(item: MenuItem, e: MouseEvent) {
+
+  submenuOpen(item: MenuItem, e: MouseEvent): void {
     e.stopPropagation();
-    
+
     if (this.activeItem) {
       this.menu.children[this.activeItem.submenuIndex].show = false;
       this.activeItem = undefined;

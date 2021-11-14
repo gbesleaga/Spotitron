@@ -3,10 +3,11 @@
  */
 
  export class CopyShader {
-    uniforms = {
-        'tDiffuse': { value: null },
-		'opacity': { value: 1.0 }
-	};
+   
+  uniforms = {
+    'tDiffuse': { value: null },
+    'opacity': { value: 1.0 }
+  };
 
 	vertexShader = [
 		'varying vec2 vUv;',
@@ -20,7 +21,6 @@
 	].join('\n');
 
 	fragmentShader = [
-
 		'uniform float opacity;',
 
 		'uniform sampler2D tDiffuse;',

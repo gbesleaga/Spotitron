@@ -10,7 +10,6 @@ import { CountrySelectionService } from 'src/app/shared/country-selection.servic
 import { MobileService } from 'src/app/shared/mobile.service';
 
 
-
 @Component({
   selector: 'app-main-view',
   templateUrl: './main-view.component.html',
@@ -28,6 +27,7 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
 
   hideUI = false;
 
+
   constructor(
     private countryDataService: CountryDataService,
     private countrySelectionService: CountrySelectionService,
@@ -35,27 +35,30 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
     private authService: AuthService,
     private mobileService: MobileService,
     private router: Router) {
-    }
+  }
 
-  ngAfterViewInit(){
+
+  ngAfterViewInit() {
     this.renderingService.setStarfieldState(StarfieldState.Halt);
     this.renderingService.initGlobe(this.countryDataService.getChartData());
     this.hoveredCountrySubscription = this.countrySelectionService.getHoveredCountry().subscribe(country => {
       this.hoveredCountry = country;
     });
 
-    this.selectedCountrySubscription = this.selectedCountrySubscription = this.countrySelectionService.getSelectedCountry().subscribe( () => {
+    this.selectedCountrySubscription = this.selectedCountrySubscription = this.countrySelectionService.getSelectedCountry().subscribe(() => {
       this.hideUI = true;
     });
 
-    this.selectionClearedSubscription = this.countrySelectionService.onClearSelection().subscribe( () => {
+    this.selectionClearedSubscription = this.countrySelectionService.onClearSelection().subscribe(() => {
       this.hideUI = false;
     });
   }
 
+
   ngAfterContentInit() {
     this.isOnMobile = this.mobileService.isOnMobile();
   }
+
 
   ngOnDestroy() {
     if (this.hoveredCountrySubscription) {
@@ -71,11 +74,12 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
     }
   }
 
-  onLogout() {
+
+  onLogout(): void {
     // we just need to hide globe, the instance of the service will be recreated
     this.renderingService.hideGlobe();
-    this.renderingService.setStarfieldState(StarfieldState.Cruise); 
-   
+    this.renderingService.setStarfieldState(StarfieldState.Cruise);
+
     this.authService.logout();
     this.countryDataService.clearStorage();
     this.router.navigate(['']);
