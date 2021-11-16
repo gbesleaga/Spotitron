@@ -9,7 +9,7 @@ import { CountryDataService } from '../shared/country-data.service';
 import { CountrySelectionService } from '../shared/country-selection.service';
 import { CountryChart, Position2D } from '../shared/types';
 
-import { Map3DGeometry } from './geometry/Map3DGeometry';
+import { CountryRenderData, Map3DGeometry } from './geometry/Map3DGeometry';
 import { EffectComposer } from './postprocessing/effect-composer';
 import { FXAAShader } from './shaders/fxaa-shader';
 import { OutlinePass } from './postprocessing/outline-pass';
@@ -47,7 +47,7 @@ const ROTATIONAL_HALT_SPEED = 0.005;
 const CRUISE_SPEED = 0.02;
 const HYPER_SPEED = 10;
 
-const ACCELERATION = 0.2; // 0.5
+const ACCELERATION = 0.3;
 
 
 @Injectable({ providedIn: 'root' })
@@ -78,7 +78,10 @@ export class RenderingService {
   private globe: THREE.Object3D = new THREE.Object3D();
   private textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
 
+  private countryVS: string | null | undefined;
+  private countryFS: string | null | undefined;
   private countryDefaultMaterials: THREE.MeshBasicMaterial[] = [];
+  private countryMaterials = new Map<string, THREE.ShaderMaterial>(); // key is url for number 1 song cover
   private countryExtrudeSuffix = "_extrude";
 
   // postprocessing
@@ -171,6 +174,21 @@ export class RenderingService {
     // setup subscriptions
     this.countrySelectionService.onClearSelection().subscribe(() => {
       this.deselectCountry();
+    });
+
+    this.countryDataService.onChartDataLazyFetch().subscribe(country => {
+      // first remove default mesh
+      const countryObj = this.globe.getObjectByName(country);
+      if (countryObj) {
+        this.globe.remove(countryObj);
+      }
+
+      // then setup
+      this.setupCountry(
+        country, 
+        this.countryDataService.geometryData[country],
+        this.countryDataService.getChartDataForCountry(country)
+      );
     });
   }
 
@@ -336,19 +354,15 @@ export class RenderingService {
     this.globe.scale.set(GLOBE_SCALE, GLOBE_SCALE, GLOBE_SCALE);
     this.scene.add(this.globe);
 
-
     let radius = 0.995;
-
     let geometry = new THREE.SphereGeometry(radius, 90, 45);
-
     let material = new THREE.MeshBasicMaterial({ color: 0x2c3e50 });
-
     this.globe.add(new THREE.Mesh(geometry, material));
 
     //this.textureLoader.setCrossOrigin('*');
 
-    const vs = document.getElementById("country-vs")?.textContent;
-    const fs = document.getElementById("country-fs")?.textContent;
+    this.countryVS = document.getElementById("country-vs")?.textContent;
+    this.countryFS = document.getElementById("country-fs")?.textContent;
 
     // country default materials
     this.countryDefaultMaterials.push(
@@ -368,69 +382,76 @@ export class RenderingService {
 
     let countries: any = this.countryDataService.geometryData;
 
-    let i = 0;
-
-    // key is url for number 1 song cover
-    const countryMaterials = new Map<string, THREE.ShaderMaterial>();
-
     this.selectableCountries = [];
 
     for (let name in countries) {
-      let cGeometry = new Map3DGeometry(countries[name], 1);
-      let cGeometryExtrude = new Map3DGeometry(countries[name], 0)
+      this.setupCountry(name, countries[name], charts.get(name));
+    }
 
-      let material: THREE.ShaderMaterial | THREE.MeshBasicMaterial | undefined = this.countryDefaultMaterials[i % this.countryDefaultMaterials.length];
-      let url = '';
+    // event listening
+    this.enableUserInput();
+  }
 
-      // country has chart?
-      const countryChart = charts.get(name);
-      if (countryChart) {
-        const playlistItems = countryChart.tracks.items as SpotifyPlaylistTrackObject[];
 
-        if (playlistItems.length > 0) {
-          const nImages = playlistItems[0].track.album.images.length;
-          if (nImages) {
-            url = playlistItems[0].track.album.images[0].url; // picking largest size
-          }
+  private setupCountry(name: string, renderData: CountryRenderData, chart?: CountryChart): void {    
+    let url = '';
 
-          this.selectableCountries.push(name); // country is selectable
+    // country has chart?
+    if (chart) {
+      const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
+
+      if (playlistItems.length > 0) {
+        const nImages = playlistItems[0].track.album.images.length;
+        if (nImages) {
+          url = playlistItems[0].track.album.images[0].url; // picking largest size
         }
+
+        this.selectableCountries.push(name); // country is selectable
       }
+    }
 
-      // we got an image?
-      if (url) {
-        material = countryMaterials.get(url);
+    let canBeSelected = false;
 
-        if (!material) {
-          // no material yet, so create it
+    let material: THREE.ShaderMaterial | THREE.MeshBasicMaterial | undefined = 
+      this.countryDefaultMaterials[Math.floor(Math.random() * this.countryDefaultMaterials.length)];
 
-          material = new THREE.ShaderMaterial({
-            uniforms: {
-              tMatCap: { value: this.textureLoader.load(url) }
-            },
-            vertexShader: vs ? vs : "",
-            fragmentShader: fs ? fs : ""
-          });
+    // we got an image?
+    if (url) {
+      canBeSelected = true;
 
-          material.uniforms.tMatCap.value.wrapS = material.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
+      material = this.countryMaterials.get(url);
 
-          countryMaterials.set(url, material);
-        }
+      if (!material) {
+        // no material yet, so create it
+        material = new THREE.ShaderMaterial({
+          uniforms: {
+            tMatCap: { value: this.textureLoader.load(url) }
+          },
+          vertexShader: this.countryVS ? this.countryVS : "",
+          fragmentShader: this.countryFS ? this.countryFS : ""
+        });
+
+        material.uniforms.tMatCap.value.wrapS = material.uniforms.tMatCap.value.wrapT = THREE.ClampToEdgeWrapping;
+
+        this.countryMaterials.set(url, material);
       }
+    }
 
-      let cMesh = new THREE.Mesh(cGeometry, material);
+    // this is the flat mesh, we use it for the outline pass
+    let cGeometry = new Map3DGeometry(renderData, 1);
+    let cMesh = new THREE.Mesh(cGeometry, material);
+    cMesh.visible = true;
+    cMesh.name = name;
+    cMesh.scale.set(COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE);
+    this.globe.add(cMesh);
+
+    if (canBeSelected) {
+      // this is the mesh we use when country is selected
+      let cGeometryExtrude = new Map3DGeometry(renderData, 0)
       let cMeshExtrude = new THREE.Mesh(cGeometryExtrude, material);
-
-      cMesh.visible = true;
       cMeshExtrude.visible = false;
-
-      cMesh.name = name;
       cMeshExtrude.name = name + this.countryExtrudeSuffix;
-
-      cMesh.scale.set(COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE);
       cMeshExtrude.scale.set(COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE, COUNTRY_STARTING_SCALE);
-
-      this.globe.add(cMesh);
       this.globe.add(cMeshExtrude);
 
       // country animations
@@ -463,13 +484,7 @@ export class RenderingService {
       cReverseAction.clampWhenFinished = true;
 
       this.countryAnimations.set(name, { mixer: cMixer, action: cAction, reverseAction: cReverseAction });
-
-      // loop
-      i++;
     }
-
-    // event listening
-    this.enableUserInput();
   }
 
 
