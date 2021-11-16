@@ -202,13 +202,11 @@ export class CountryDataService {
 
 
   private newCountryChartFetched(countryName: string): void {
-    console.log(countryName);
     this.chartDataLazyFetchSubject.next(countryName);
   }
 
 
   private allCountryChartDataFetched(): void {
-    console.log("all country data done");
     this.storeChartData();
   }
 
