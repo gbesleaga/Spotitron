@@ -183,7 +183,7 @@ export class CountryDataService {
 
     let remainingCountries: string[] = [];
     for (let country in this.geometryData) {
-      if (this.chartData.has(country)) {
+      if (!this.chartData.has(country)) {
         remainingCountries.push(country);
       }
     }
