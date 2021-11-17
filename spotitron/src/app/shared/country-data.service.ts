@@ -4,8 +4,8 @@ import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject } fro
 import countryGeometryData from '../../assets/countries/data.json'
 import { CountryChart } from "./types";
 
-import { catchError, map } from 'rxjs/operators'
-import { forkJoin, Observable, of, Subject } from 'rxjs';
+import { catchError, map, take } from 'rxjs/operators'
+import { interval, Observable, of, Subject, Subscription } from 'rxjs';
 import { extractChart } from "./spotify-lib-util";
 
 
@@ -19,36 +19,28 @@ export class CountryDataService {
 
   private chartDataProgressSubject: Subject<number> = new Subject();
   private chartDataReadySubject: Subject<void> = new Subject();
-
-  public readonly countryNames: string[];
+  private chartDataLazyFetchSubject: Subject<string> = new Subject();
 
   private readonly storageKeyForChartData: string = 'STRON_charts';
   private readonly storageKeyForChartDataTimestamp: string = "STRON_chartsTimestamp"
 
   private readonly storageExpireAfterMS = 24 * 3600 * 1000; // 24h 
 
-  //TODO adjust if needed
-  private readonly parallelRequests = 7;
-  private readonly requestWaitIntervalMs = 25;
+  // avoid rate limiting
+  private readonly fastRequestIntervalMS = 50;
+  private readonly slowRequestIntervalMS = 200;
 
+  private isStorageDirty = false;
 
   constructor(private spotifyService: SpotifyHttpClientService,
     private authService: AuthService) {
 
     this.geometryData = countryGeometryData;
-
-    if (this.fetchChartDataFromStorage()) {
-      this.chartDataReady = true;
-      this.countryNames = Array.from(this.chartData.keys());
-    } else {
-      this.chartDataReady = false;
-
-      this.countryNames = [];
-
-      for (let country in this.geometryData) {
-        this.countryNames.push(country);
-      }
-    }
+    
+    // fetch what we have in storage
+    this.fetchChartDataFromStorage();
+    
+    this.chartDataReady = false;
   }
 
 
@@ -65,54 +57,85 @@ export class CountryDataService {
   public fetchChartData(): void {
     if (!this.chartDataReady) {
       // fetch from server
-      this.fetchNextCountry(0, this.countryNames.length);
+      // we will first fetch countries that are known to have chart data
+      // sending requests very fast
+      // when this is done we are ready (we don't care about individual requests)
+
+      let prioCountries: string[] = [];
+      for (const country of SPOTIFY_COUNTRIES) {
+        if (!this.chartData.has(country)) {
+          // need to fetch
+          prioCountries.push(country);
+        }
+      }
+
+      this.fetchCountries(
+        prioCountries, 
+        this.fastRequestIntervalMS, 
+        this.chartDataProgress.bind(this),
+        undefined, 
+        this.setChartDataReady.bind(this)
+      );
     } else {
       this.chartDataReadySubject.next();
     }
   }
 
 
-  private fetchNextCountry(at: number, stop: number): void {
-    if (at >= stop) {
-      this.setChartDataReady();
-      return;
+  private fetchCountries(
+    countryNames: string[], 
+    intervalBetweenRequestsMs: number, 
+    onProgress?: (completionPercentage: number) => void,
+    onSuccessfulRequest?: (countryName: string) => void,
+    onDone?: () => void): void {
+
+    const stop = countryNames.length;
+
+    if (stop === 0 && onDone) {
+      onDone();
     }
 
-    this.chartDataProgress(at * 100 / stop);
+    let at = 0;
 
-    const requests = [];
+    const source = interval(intervalBetweenRequestsMs);
+    source.pipe(take(stop)).subscribe( i => {
+      // setup request
+      const request = this.spotifyService.getCountryChart({ accessToken: this.authService.getAccessToken(), countryName: countryNames[i] })
+        .pipe(
+          catchError(error => of(error)), // ignore errors
+          map(chart => ({ ...chart, country: countryNames[i] }))
+        );
 
-    let step = stop - at;
-
-    if (step > this.parallelRequests) {
-      step = this.parallelRequests;
-    }
-
-    for (let i = at; i < at + step; ++i) {
-      const request = this.spotifyService.getCountryChart({ accessToken: this.authService.getAccessToken(), countryName: this.countryNames[i] }).pipe(catchError(error => of(error)), map(chart => ({ ...chart, country: this.countryNames[i] })));
-      requests.push(request);
-    }
-
-    forkJoin(requests).subscribe(
-      responseList => {
-        for (let chart of responseList) {
+      // make request
+      request.subscribe(
+        chart => {
+          // check if we have retrieved data
           if (chart && chart.tracks) {
             const playlistItems = chart.tracks.items as SpotifyPlaylistTrackObject[];
 
             if (playlistItems) {
+              this.isStorageDirty = true;
               this.chartData.set(chart.country, extractChart(chart));
+
+              if (onSuccessfulRequest) {
+                onSuccessfulRequest(chart.country);
+              }
             }
           }
-        }
 
-        window.setTimeout(() => {
-          this.fetchNextCountry(at + step, stop);
-        }, this.requestWaitIntervalMs);
-      },
-      err => {
-        //TODO error handling
-        console.log("An error occured: " + err);
-      });
+          // update progress
+          at += 1;
+          if (onProgress) {
+            onProgress(at * 100 / stop);
+          }
+
+
+          if (at == stop && onDone) {
+            onDone();
+          }
+        }
+      );
+    });
   }
 
 
@@ -123,6 +146,11 @@ export class CountryDataService {
 
   public onChartDataReady(): Observable<void> {
     return this.chartDataReadySubject.asObservable();
+  }
+
+
+  public onChartDataLazyFetch(): Observable<string> {
+    return this.chartDataLazyFetchSubject.asObservable();
   }
 
 
@@ -147,8 +175,39 @@ export class CountryDataService {
     // store
     this.storeChartData();
 
+    // we will then fetch the remaining countries in the background
+    // using a much slower request rate
+    // and send notifications for new additions
+    // when we are done, we update the chart data in storage if needed
+    // we do not care about completion percentage
+
+    let remainingCountries: string[] = [];
+    for (let country in this.geometryData) {
+      if (!this.chartData.has(country)) {
+        remainingCountries.push(country);
+      }
+    }
+
+    this.fetchCountries(
+      remainingCountries, 
+      this.slowRequestIntervalMS,
+      undefined,  
+      this.newCountryChartFetched.bind(this), 
+      this.allCountryChartDataFetched.bind(this)
+    );
+
     // notify
     this.chartDataReadySubject.next();
+  }
+
+
+  private newCountryChartFetched(countryName: string): void {
+    this.chartDataLazyFetchSubject.next(countryName);
+  }
+
+
+  private allCountryChartDataFetched(): void {
+    this.storeChartData();
   }
 
 
@@ -182,6 +241,10 @@ export class CountryDataService {
 
 
   private storeChartData(): void {
+    if (!this.isStorageDirty) {
+      return;
+    }
+
     try {
       const storedData = JSON.stringify([...this.chartData]);
       //TODO additional compression with lz-string?
@@ -189,8 +252,86 @@ export class CountryDataService {
 
       const storedTimestamp = (new Date()).toString();
       localStorage.setItem(this.storageKeyForChartDataTimestamp, storedTimestamp);
+
+      this.isStorageDirty = false;
     } catch (e) {
       // do nothing
     }
   }
 }
+
+
+
+/** these countries are known to have spotify chart data */
+const SPOTIFY_COUNTRIES = [
+"Andorra",
+"Argentina",
+"Australia",
+"Austria",
+"Belgium",
+"Bolivia",
+"Bulgaria",
+"Brazil",
+"Canada",
+"Chile",
+"Taiwan",
+"Colombia",
+"Costa Rica",
+"Cyprus",
+"Czech Republic",
+"Dominica",
+"Denmark",
+"Ecuador",
+"Dominican Republic",
+"El Salvador",
+"Estonia",
+"Finland",
+"France",
+"Germany",
+"Greece",
+"Guatemala",
+"Honduras",
+"Hong Kong",
+"Hungary",
+"Iceland",
+"India",
+"Indonesia",
+"Israel",
+"Ireland",
+"Italy",
+"Japan",
+"South Korea",
+"Latvia",
+"Lithuania",
+"Luxembourg",
+"Malaysia",
+"Mexico",
+"Morocco",
+"Netherlands",
+"New Zealand",
+"Nicaragua",
+"Norway",
+"Panama",
+"Peru",
+"Paraguay",
+"Philippines",
+"Poland",
+"Portugal",
+"Romania",
+"Russia",
+"Saudi Arabia",
+"Singapore",
+"Vietnam",
+"Slovakia",
+"South Africa",
+"Spain",
+"Sweden",
+"Switzerland",
+"Thailand",
+"Turkey",
+"Ukraine",
+"Egypt",
+"United Kingdom",
+"United States",
+"Uruguay"
+]
