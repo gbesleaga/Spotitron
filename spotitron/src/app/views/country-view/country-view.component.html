@@ -3,12 +3,9 @@
         <ng-template contextMenuHost></ng-template>
     </div>
 
-    <div id="overlay-close" (click)="onLeaveView()">
-        X
-    </div>
-
     <div class="vcontainer">
-        <div class="hcontainer chart-title" (pointerenter)="onChartTitleHoverEnter()" (pointerleave)="onChartTitleHoverLeave()">
+        <div class="hcontainer chart-title">
+            <div class="item-spacing"> </div>
             <div class="item-state">
                 <p class="flat-emoji"> {{displayChartTitle.followingText}}&#xFE0E; </p>
             </div>
@@ -22,6 +19,10 @@
                 width="40" height="40"
                 (click)="openChartMoreMenu($event)"
                 alt="Menu">
+            </div>
+            <div class="item-spacing"> </div>
+            <div id="overlay-close" (click)="onLeaveView()">
+              X
             </div> 
         </div>
 

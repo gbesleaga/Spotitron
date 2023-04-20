@@ -21,11 +21,16 @@
 
 #overlay-close {
   font-family: 'Lato', sans-serif;
-  font-size: max(3vw, 24px);
+  font-size: max(2vw, 24px);
   position: absolute;
-  top: max(1vw, 8px);
-  right: max(0.5vw, 2px);
+  right: min(-1vw, -12px);
+  top: min(-1vw, -12px);
   cursor: pointer;
+  padding-left: max(0.5vw, 6px);
+  padding-right: max(0.5vw, 6px);
+  background-color: #c0392b;
+  border: 2px solid white;
+  border-radius: 25px;
 }
 
 #overlay-close:hover {
@@ -79,9 +84,11 @@
   background-color: #c0392b;
   padding-top: max(1vw, 8px);
   padding-bottom: max(1vw, 8px);
+  margin-top: max(2vw, 16px);
   margin-bottom: max(1vw, 8px);
   font-family: 'Zen Dots', cursive;
   font-size: max(1.5vw, 12px); /*30px*/;
+  position: relative;
 }
 
 .chart-title .item-state {
@@ -89,7 +96,7 @@
 }
 
 .chart-title-text {
-  width:80%;
+  width:60%;
 }
 
 .chart-title-text h1 {

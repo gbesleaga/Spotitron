@@ -69,9 +69,8 @@ export class CountryViewComponent {
     private notificationService: NotificationsService,
     private mobileService: MobileService) {
 
-    if (this.mobileService.isOnMobile()) {
-      this.displayChartTitle.showState = true; // always visible on mobile
-    }
+    
+    this.displayChartTitle.showState = true; // always visible on mobile
 
     this.playlistsOfCurrentUser = this.spotifyUserService.getUserOwnedPlaylists();
 
@@ -129,26 +128,6 @@ export class CountryViewComponent {
         console.log("Failed to retrieve follow state.");
       }
     );
-  }
-
-
-  onChartTitleHoverEnter(): void {
-    if (this.mobileService.isOnMobile()) {
-      // no-op on mobile
-      return; 
-    }
-
-    this.displayChartTitle.showState = true;
-  }
-
-
-  onChartTitleHoverLeave(): void {
-    if (this.mobileService.isOnMobile()) {
-      // no-op on mobile
-      return; 
-    }
-
-    this.displayChartTitle.showState = false;
   }
 
 
