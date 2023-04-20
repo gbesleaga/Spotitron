@@ -1,17 +1,26 @@
 import { SpotifyUserObject, SpotifyPagingObject, SpotifyPlaylistTrackObject, SpotifyTrackObject, SpotifySimplifiedArtistObject, SpotifySimplifiedAlbumObject, SpotifyImageObject } from "spotify-lib";
 import { CountryChart } from "./types";
+import { environment } from "src/environments/environment";
 
 
-export function extractChart(obj: any): CountryChart {
-  const country: string = obj.country;
-  const name: string = obj.name;
-  const id: string = obj.id;
-
-  const owner = extractSpotifyUserObject(obj.owner);
-
-  const tracks = extractSpotifyPagingObject(obj.tracks);
-
-  return { country, name, tracks, id, owner };
+export function extractChart(obj: any): CountryChart | undefined {
+  try {
+    const country: string = obj.country;
+    const name: string = obj.name;
+    const id: string = obj.id;
+  
+    const owner = extractSpotifyUserObject(obj.owner);
+  
+    const tracks = extractSpotifyPagingObject(obj.tracks);
+  
+    return { country, name, tracks, id, owner };
+  } catch (e) {
+    if (!environment.production) {
+      console.log(e);
+    }
+    
+    return undefined;
+  }
 }
 
 

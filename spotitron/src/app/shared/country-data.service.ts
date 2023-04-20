@@ -115,7 +115,11 @@ export class CountryDataService {
 
             if (playlistItems) {
               this.isStorageDirty = true;
-              this.chartData.set(chart.country, extractChart(chart));
+              
+              const dataFromChart = extractChart(chart);
+              if (dataFromChart) {
+                this.chartData.set(chart.country, dataFromChart);
+              }
 
               if (onSuccessfulRequest) {
                 onSuccessfulRequest(chart.country);
