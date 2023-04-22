@@ -348,6 +348,9 @@ export class RenderingService {
   public initGlobe(charts: Map<string, CountryChart>): void {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.enableZoom = false;
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+    this.controls.rotateSpeed = 0.1;
 
     this.cameraDollyOutMaxDist = this.camera.position.distanceTo(this.globe.position) * 1.5;
 
@@ -570,6 +573,8 @@ export class RenderingService {
     if (this.cameraAnimating) {
       this.camera.lookAt(0, 0, 0); // keep camera looking at center
     }
+
+    this.controls?.update();
 
     this.composer?.render();
   };
