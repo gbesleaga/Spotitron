@@ -109,7 +109,7 @@ export class CountryDataService {
     const source = interval(intervalBetweenRequestsMs);
 
     this.cancelChartDataRetrieval();
-    
+
     this.chartDataRequesterSub = source.pipe(take(stop)).subscribe( i => {
       // setup request
       const request = this.spotifyService.getCountryChart({ accessToken: this.authService.getAccessToken(), countryName: countryNames[i] })
@@ -280,10 +280,10 @@ export class CountryDataService {
 
 /** these countries are known to have spotify chart data */
 const SPOTIFY_COUNTRIES = [
-"Andorra",
 "Argentina",
 "Australia",
 "Austria",
+"Belarus",
 "Belgium",
 "Bolivia",
 "Bulgaria",
@@ -293,13 +293,13 @@ const SPOTIFY_COUNTRIES = [
 "Taiwan",
 "Colombia",
 "Costa Rica",
-"Cyprus",
 "Czech Republic",
 "Dominica",
 "Denmark",
 "Ecuador",
 "Dominican Republic",
 "El Salvador",
+"Egypt",
 "Estonia",
 "Finland",
 "France",
@@ -326,10 +326,12 @@ const SPOTIFY_COUNTRIES = [
 "Netherlands",
 "New Zealand",
 "Nicaragua",
+"Nigeria",
 "Norway",
 "Panama",
 "Peru",
 "Paraguay",
+"Pakistan",
 "Philippines",
 "Poland",
 "Portugal",
