@@ -314,6 +314,9 @@ export class RenderingService {
     this.camera.lookAt(this.scene.position);
     this.scene.add(this.camera);
 
+    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1;
+
+    this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     const canvasPlaceholder = document.getElementById('canvas-placeholder');
@@ -333,7 +336,7 @@ export class RenderingService {
           iBrightness: { value: 0.02},
           iSpeed: { value: 0.0 },
           iSpeedRot: { value: 0.0 },
-          iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+          iResolution: { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) }
         },
         vertexShader: starfieldVS ? starfieldVS : undefined,
         fragmentShader: starfieldFS ? starfieldFS : undefined,
@@ -359,11 +362,11 @@ export class RenderingService {
     renderPass.clear = false;
     this.composer.addPass(renderPass);
 
-    this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera, undefined);
+    this.outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr), this.scene, this.camera, undefined);
     this.composer.addPass(this.outlinePass);
 
     this.effectFXAA = new ShaderPass(new FXAAShader());
-    this.effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+    this.effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth * dpr), 1 / (window.innerHeight * dpr));
     this.composer.addPass(this.effectFXAA);
 
     this.resize();
@@ -614,15 +617,16 @@ export class RenderingService {
     if (this.renderer.domElement.parentElement) {
       let w = window.innerWidth;
       let h = window.innerHeight;
+      const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1;
 
       // notify the renderer of the size change
       this.renderer.setSize(w, h);
       this.composer?.setSize(w, h);
-      this.effectFXAA?.uniforms['resolution'].value.set(1 / w, 1 / h);
+      this.effectFXAA?.uniforms['resolution'].value.set(1 / (w * dpr), 1 / (h * dpr));
 
       if (this.starfieldQuad) {
         const material = this.starfieldQuad.material as THREE.ShaderMaterial;
-        material.uniforms['iResolution'] = new THREE.Uniform(new THREE.Vector2(w, h));
+        material.uniforms['iResolution'] = new THREE.Uniform(new THREE.Vector2(w * dpr, h * dpr));
       }
 
       // update the camera
