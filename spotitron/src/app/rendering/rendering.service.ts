@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { SpotifyPlaylistTrackObject } from 'spotify-lib';
 
 import * as THREE from 'three';
@@ -167,7 +167,8 @@ export class RenderingService {
     private countryDataService: CountryDataService,
     private countrySelectionService: CountrySelectionService,
     private notificationService: NotificationsService,
-    private mobileService: MobileService) {
+    private mobileService: MobileService,
+    private ngZone: NgZone) {
 
     // determine default quality
     this.quality = this.autoDetectQuality();
@@ -533,14 +534,16 @@ export class RenderingService {
 
 
   public enableUserInput(): void {
-    this.renderer.domElement.addEventListener('pointerdown', this.onMouseDownBinding);
-    this.renderer.domElement.addEventListener('pointermove', this.onMouseMoveBinding);
-    this.renderer.domElement.addEventListener('pointerup', this.onMouseUpBinding);
-    this.renderer.domElement.addEventListener('wheel', this.onWheelBinding);
-
-    this.renderer.domElement.addEventListener('pointercancel', this.onPointerCancelBinding);
-    this.renderer.domElement.addEventListener('pointerleave', this.onPointerLeaveBinding);
-    this.renderer.domElement.addEventListener('pointerout', this.onPointerOutBinding);
+    this.ngZone.runOutsideAngular( () => {
+      this.renderer.domElement.addEventListener('pointerdown', this.onMouseDownBinding);
+      this.renderer.domElement.addEventListener('pointermove', this.onMouseMoveBinding);
+      this.renderer.domElement.addEventListener('pointerup', this.onMouseUpBinding);
+      this.renderer.domElement.addEventListener('wheel', this.onWheelBinding);
+  
+      this.renderer.domElement.addEventListener('pointercancel', this.onPointerCancelBinding);
+      this.renderer.domElement.addEventListener('pointerleave', this.onPointerLeaveBinding);
+      this.renderer.domElement.addEventListener('pointerout', this.onPointerOutBinding);
+    })
   }
 
 
@@ -676,6 +679,8 @@ export class RenderingService {
 
 
   private onMouseMove(e: PointerEvent): void {
+    //NgZone.assertNotInAngularZone();
+    
     if (this.mousePressed) {
       if (Math.abs(this.mousePosition.x - e.pageX) > this.mouseDragDelta ||
         Math.abs(this.mousePosition.y - e.pageY) > this.mouseDragDelta) {
