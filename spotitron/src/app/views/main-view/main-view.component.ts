@@ -81,6 +81,7 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
     this.renderingService.setStarfieldState(StarfieldState.Cruise);
 
     this.authService.logout();
+    this.countryDataService.cancelChartDataRetrieval();
     this.countryDataService.clearStorage();
     this.router.navigate(['']);
   }

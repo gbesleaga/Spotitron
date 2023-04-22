@@ -30,6 +30,8 @@ export class CountryDataService {
   private readonly fastRequestIntervalMS = 50;
   private readonly slowRequestIntervalMS = 200;
 
+  private chartDataRequesterSub: Subscription | undefined = undefined;
+
   private isStorageDirty = false;
 
   constructor(private spotifyService: SpotifyHttpClientService,
@@ -46,6 +48,13 @@ export class CountryDataService {
 
   public clearStorage(): void {
     localStorage.removeItem(this.storageKeyForChartData);
+  }
+
+  public cancelChartDataRetrieval(): void {
+    if (this.chartDataRequesterSub) {
+      this.chartDataRequesterSub.unsubscribe();
+      this.chartDataRequesterSub = undefined;
+    }
   }
 
 
@@ -98,7 +107,10 @@ export class CountryDataService {
     let at = 0;
 
     const source = interval(intervalBetweenRequestsMs);
-    source.pipe(take(stop)).subscribe( i => {
+
+    this.cancelChartDataRetrieval();
+    
+    this.chartDataRequesterSub = source.pipe(take(stop)).subscribe( i => {
       // setup request
       const request = this.spotifyService.getCountryChart({ accessToken: this.authService.getAccessToken(), countryName: countryNames[i] })
         .pipe(
