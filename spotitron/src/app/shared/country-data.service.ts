@@ -17,6 +17,8 @@ export class CountryDataService {
 
   private chartData: Map<string, CountryChart> = new Map();
 
+  private countryNameMappings = new Map();
+
   private chartDataProgressSubject: Subject<number> = new Subject();
   private chartDataReadySubject: Subject<void> = new Subject();
   private chartDataLazyFetchSubject: Subject<string> = new Subject();
@@ -39,6 +41,8 @@ export class CountryDataService {
 
     this.geometryData = countryGeometryData;
     
+    this.countryNameMappings.set("United States", "USA");
+
     // fetch what we have in storage
     this.fetchChartDataFromStorage();
     
@@ -112,7 +116,10 @@ export class CountryDataService {
 
     this.chartDataRequesterSub = source.pipe(take(stop)).subscribe( i => {
       // setup request
-      const request = this.spotifyService.getCountryChart({ accessToken: this.authService.getAccessToken(), countryName: countryNames[i] })
+      const request = this.spotifyService.getCountryChart({ 
+        accessToken: this.authService.getAccessToken(), 
+        countryName: this.countryNameMappings.has(countryNames[i])? this.countryNameMappings.get(countryNames[i]) : countryNames[i] 
+      })
         .pipe(
           catchError(error => of(error)), // ignore errors
           map(chart => ({ ...chart, country: countryNames[i] }))
