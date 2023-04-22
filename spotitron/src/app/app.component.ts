@@ -41,29 +41,34 @@ export class AppComponent implements AfterViewInit, AfterContentInit {
   ngAfterContentInit() {
     // get autodetected quality
     this.quality = this.renderingService.getQuality();
+    this.animationService.setQuality(this.quality);
   }
 
 
   onUltraLowQualitySelected(): void {
     this.quality = 'Ultra-Low';
     this.renderingService.setQuality(this.quality);
+    this.animationService.setQuality(this.quality);
   }
 
 
   onLowQualitySelected(): void {
     this.quality = 'Low';
     this.renderingService.setQuality(this.quality);
+    this.animationService.setQuality(this.quality);
   }
 
 
   onMidQualitySelected(): void {
     this.quality = 'Mid';
     this.renderingService.setQuality(this.quality);
+    this.animationService.setQuality(this.quality);
   }
 
 
   onHighQualitySelected(): void {
     this.quality = 'High';
     this.renderingService.setQuality(this.quality);
+    this.animationService.setQuality(this.quality);
   }
 }

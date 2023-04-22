@@ -48,7 +48,7 @@ const COUNTRY_STARTING_SCALE = 1.005; // avoids z-fighting with globe
 
 // starfield config
 const STARFIELD_LOW_NUM_LAYERS = 2;
-const STARFIELD_MID_NUM_LAYERS = 5;
+const STARFIELD_MID_NUM_LAYERS = 4;
 const STARFIELD_HIGH_NUM_LAYERS = 9;
 
 // starfield speed
