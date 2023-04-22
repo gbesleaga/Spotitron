@@ -1,66 +1,92 @@
 {
-  "hosting": {
-    "public": "dist/spotitron",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source":"**",
-        "headers": [
-          {
-            "key": "Content-Security-Policy",
-            "value": "default-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; script-src 'self'; connect-src *; img-src 'self' *.scdn.co; media-src 'self' *.scdn.co; font-src 'self' https://fonts.gstatic.com"
-          },
-          { 
-            "key": "X-Content-Type-Options", 
-            "value": "nosniff" 
-          },
-          {
-            "key": "X-Frame-Options",
-            "value": "DENY"
-          },
-          { 
-            "key": "X-XSS-Protection", 
-            "value": "1; mode=block" 
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=691200"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=691200"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(jpg|jpeg|gif|png|ico)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=691200"
-          }
-        ]
-      }
-    ]
-  }
+  "hosting": [
+    {
+      "public": "dist/spotitron",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; script-src 'self'; connect-src *; img-src 'self' *.scdn.co; media-src 'self' *.scdn.co; font-src 'self' https://fonts.gstatic.com"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=691200"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=691200"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=691200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "spotitron",
+      "public": "dist/spotitron",
+      "ignore": [
+        "**/.*"
+      ],
+      "headers": [
+        {
+          "source": "*.[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].+(css|js)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public,max-age=31536000,immutable"
+            }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
 }
