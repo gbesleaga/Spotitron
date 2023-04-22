@@ -5,8 +5,10 @@
     <img src="/assets/images/buttons/more_alt.png" width="20" height="20" alt="Quality options">
     <p id="quality-label">QUALITY</p>
     <div id="quality-values">
+        <p [ngClass]="('quality-val ' + (quality === 'Ultra-Low'? ' selected ' : ''))" (click)="onUltraLowQualitySelected()">ULTRA-LOW</p>
         <p [ngClass]="('quality-val ' + (quality === 'Low'? ' selected ' : ''))" (click)="onLowQualitySelected()">LOW</p>
-        <p [ngClass]="('quality-val ' + (quality === 'Standard' ? ' selected ' : ''))" (click)="onStandardQualitySelected()">STANDARD</p>
+        <p [ngClass]="('quality-val ' + (quality === 'Mid'? ' selected ' : ''))" (click)="onMidQualitySelected()">MID</p>
+        <p [ngClass]="('quality-val ' + (quality === 'High' ? ' selected ' : ''))" (click)="onHighQualitySelected()">HIGH</p>
     </div> 
 </div>
 <app-notifications></app-notifications>

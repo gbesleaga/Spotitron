@@ -27,9 +27,9 @@
     // Starfield Tutorial by Martijn Steinrucken aka BigWings - 2020
     // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 
-    // TODO make adjustable and tweak for performance
-		#define NUM_LAYERS 9.
-    #define BRIGHTNESS .02
+    // tweak for performance
+		uniform float iNumLayers;
+    uniform float iBrightness;
 
     uniform vec2 iResolution; // viewport resolution (pixels)
     uniform float iSpeed;   // time * factor
@@ -47,9 +47,7 @@
     float Star(vec2 uv, float flare)
     {
       float d = length(uv);
-        
-      //TWEAK
-      float m = BRIGHTNESS/d;
+      float m = iBrightness/d;
       
       float rays = max(0., 1. - abs(uv.x*uv.y * 1000.));
       m += rays * flare;
@@ -124,7 +122,7 @@
       
       vec3 col = vec3(0);
       
-      for (float i = 0.; i < 1.; i += 1./ NUM_LAYERS)
+      for (float i = 0.; i < 1.; i += 1./ iNumLayers)
       {
         float depth = fract(i+t);
         float scale = mix(20., .5, depth);

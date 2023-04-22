@@ -28,7 +28,12 @@ export enum StarfieldState {
 };
 
 // rendering quality
-export type Quality = "Low" | "Standard";
+export type Quality = "Ultra-Low" | "Low" | "Mid" | "High";
+
+export function isQuality(value: string): value is Quality {
+  return ["Ultra-Low", "Low", "Mid", "High"].includes(value as Quality)
+}
+
 
 interface Animation {
   mixer: AnimationMixer;
@@ -40,6 +45,11 @@ interface Animation {
 const GLOBE_SCALE = 250.0;
 const COUNTRY_EXTRUDE_SCALE = 1.3;
 const COUNTRY_STARTING_SCALE = 1.005; // avoids z-fighting with globe
+
+// starfield config
+const STARFIELD_LOW_NUM_LAYERS = 2;
+const STARFIELD_MID_NUM_LAYERS = 5;
+const STARFIELD_HIGH_NUM_LAYERS = 9;
 
 // starfield speed
 const HALT_SPEED = 0.0;
@@ -65,6 +75,7 @@ export class RenderingService {
 
   private sceneStarfield: THREE.Scene = new THREE.Scene();
   private starfieldQuad: THREE.Mesh | undefined;
+  private starfieldNumLayersUniform = new THREE.Uniform(STARFIELD_LOW_NUM_LAYERS)
   private starfieldState = StarfieldState.Cruise;
   private starfieldCurrentSpeedFactor = CRUISE_SPEED;
   private starfieldTargetSpeedFactor = -1;
@@ -159,7 +170,7 @@ export class RenderingService {
     private mobileService: MobileService) {
 
     // determine default quality
-    this.autoDetectQuality();
+    this.quality = this.autoDetectQuality();
 
     // setup user input bindings
     this.onMouseDownBinding = this.onMouseDown.bind(this);
@@ -193,17 +204,16 @@ export class RenderingService {
   }
 
 
-  private autoDetectQuality(): void {
+  private autoDetectQuality(): Quality {
     // if quality is already stored, use it
-    const q = this.fetchQualityFromStorage();
+    let q = this.fetchQualityFromStorage();
 
     if (q) {
-      this.quality = q;
-      return;
+      return q;
     }
 
-    // assume quality is low and then check if we can do better
-    this.quality = "Low";
+    // assume quality is lowest and then check if we can do better
+    q = "Ultra-Low";
 
     let gl: WebGL2RenderingContext | WebGLRenderingContext | null = this.renderer.domElement.getContext('webgl2');
 
@@ -212,26 +222,30 @@ export class RenderingService {
     }
 
     if (!gl) {
-      return;
+      return q;
     }
+
+    q = "Low";
 
     const dbgInfo = gl.getExtension('WEBGL_debug_renderer_info');
 
     if (!dbgInfo) {
-      return;
+      return q;
     }
 
     const renderer: string = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
 
     if (!renderer) {
-      return;
+      return q;
     }
 
     const rendererLowerCase = renderer.toLowerCase();
 
     if (rendererLowerCase.includes('nvidia') || rendererLowerCase.includes('amd')) {
-      this.quality = "Standard";
+      q = "High";
     }
+
+    return q;
   }
 
 
@@ -244,12 +258,23 @@ export class RenderingService {
     }
 
     switch (this.quality) {
-      case "Low":
+      case "Ultra-Low":
         this.starfieldPass.enabled = false;
         break;
 
-      case "Standard":
+      case "Low":
         this.starfieldPass.enabled = true;
+        this.starfieldNumLayersUniform.value = STARFIELD_LOW_NUM_LAYERS;
+        break;
+
+      case "Mid":
+        this.starfieldPass.enabled = true;
+        this.starfieldNumLayersUniform.value = STARFIELD_MID_NUM_LAYERS;
+        break;
+
+      case "High":
+        this.starfieldPass.enabled = true;
+        this.starfieldNumLayersUniform.value = STARFIELD_HIGH_NUM_LAYERS;
         break;
     }
   }
@@ -272,11 +297,15 @@ export class RenderingService {
   private fetchQualityFromStorage(): Quality | null {
     const q = localStorage.getItem(this.storageKeyForQuality);
 
-    if (q == "Low" || q == "Standard") {
-      return q;
+    if (!q) {
+      return null;
     }
 
-    return null;
+    if (isQuality(q)) {
+      return q;
+    } else {
+      return null;
+    }
   }
 
 
@@ -300,6 +329,8 @@ export class RenderingService {
       new THREE.PlaneGeometry(2, 2),
       new THREE.ShaderMaterial({
         uniforms: {
+          iNumLayers: this.starfieldNumLayersUniform,
+          iBrightness: { value: 0.02},
           iSpeed: { value: 0.0 },
           iSpeedRot: { value: 0.0 },
           iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
@@ -322,10 +353,6 @@ export class RenderingService {
     this.starfieldPass = new RenderPass(this.sceneStarfield, this.camera);
     this.starfieldPass.clear = false;
 
-    if (this.quality === "Low") {
-      this.starfieldPass.enabled = false;
-    }
-
     this.composer.addPass(this.starfieldPass);
 
     const renderPass = new RenderPass(this.scene, this.camera);
@@ -342,6 +369,9 @@ export class RenderingService {
     this.resize();
 
     window.addEventListener('resize', () => this.resize(), false);
+
+    // we autodetect early on (before some components get created) .. this ensures all components have correct quality
+    this.setQuality(this.quality);
   }
 
 
