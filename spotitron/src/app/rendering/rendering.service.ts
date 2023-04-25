@@ -733,10 +733,14 @@ export class RenderingService {
 
       if (country) {
         this.outlinePass.selectedObjects = [country];
-        this.countrySelectionService.hoverCountry(country.name);
+        this.ngZone.run(() => {
+          this.countrySelectionService.hoverCountry(country.name);
+        });
       } else {
         this.outlinePass.selectedObjects = [];
-        this.countrySelectionService.hoverCountry("");
+        this.ngZone.run(() => {
+          this.countrySelectionService.hoverCountry("");
+        })
       }
     }
   }
@@ -780,7 +784,9 @@ export class RenderingService {
       this.selectCountry(country.name);
       if (this.outlinePass) {
         this.outlinePass.selectedObjects = [country];
-        this.countrySelectionService.hoverCountry(country.name);
+        this.ngZone.run(() => {
+          this.countrySelectionService.hoverCountry(country.name);
+        });
       }
     }
   }
@@ -930,7 +936,9 @@ export class RenderingService {
         this.controls?.update();
         this.countrySelected = true;
 
-        this.countrySelectionService.selectCountry(this.selectedCountryName);
+        this.ngZone.run(() => {
+          this.countrySelectionService.selectCountry(this.selectedCountryName);
+        });
 
         for (let i = 0; i < this.activeAnimations.length; ++i) {
           if (this.activeAnimations[i].action === e.action) {
