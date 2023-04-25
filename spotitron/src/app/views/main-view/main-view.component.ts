@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { AfterContentInit, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -34,7 +34,8 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
     private renderingService: RenderingService,
     private authService: AuthService,
     private mobileService: MobileService,
-    private router: Router) {
+    private router: Router,
+    private changeDetector: ChangeDetectorRef) {
   }
 
 
@@ -43,14 +44,17 @@ export class MainViewComponent implements AfterViewInit, AfterContentInit, OnDes
     this.renderingService.initGlobe(this.countryDataService.getChartData());
     this.hoveredCountrySubscription = this.countrySelectionService.getHoveredCountry().subscribe(country => {
       this.hoveredCountry = country;
+      this.changeDetector.detectChanges();
     });
 
     this.selectedCountrySubscription = this.selectedCountrySubscription = this.countrySelectionService.getSelectedCountry().subscribe(() => {
       this.hideUI = true;
+      this.changeDetector.detectChanges();
     });
 
     this.selectionClearedSubscription = this.countrySelectionService.onClearSelection().subscribe(() => {
       this.hideUI = false;
+      this.changeDetector.detectChanges();
     });
   }
 

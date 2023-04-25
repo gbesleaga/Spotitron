@@ -1,4 +1,4 @@
-import { Component, ComponentFactoryResolver, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ComponentFactoryResolver, ViewChild } from '@angular/core';
 import { NotificationsService, NotificationType } from 'notifications-lib';
 import { Subscription } from 'rxjs';
 import { AuthService, SpotifyHttpClientService, SpotifyPlaylistTrackObject, SpotifySimplifiedPlaylistObject, SpotifyTrackObject } from 'spotify-lib';
@@ -67,7 +67,8 @@ export class CountryViewComponent {
     private authService: AuthService,
     private spotifyUserService: SpotifyUserService,
     private notificationService: NotificationsService,
-    private mobileService: MobileService) {
+    private mobileService: MobileService,
+    private changeDetector: ChangeDetectorRef) {
 
     
     this.displayChartTitle.showState = true; // always visible on mobile
@@ -105,6 +106,8 @@ export class CountryViewComponent {
       } else {
         this.onLeaveView();
       }
+
+      this.changeDetector.detectChanges();
     });
   }
 
