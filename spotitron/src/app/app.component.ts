@@ -1,4 +1,4 @@
-import { AfterContentInit, AfterViewInit, ChangeDetectorRef, Component, NgZone, OnDestroy } from '@angular/core';
+import { AfterContentInit, AfterViewInit, Component, NgZone, OnDestroy } from '@angular/core';
 import { AnimationService } from './rendering/animation.service';
 import { Quality, RenderingService } from './rendering/rendering.service';
 import { CountrySelectionService } from './shared/country-selection.service';
@@ -18,17 +18,14 @@ export class AppComponent implements AfterViewInit, AfterContentInit {
   constructor(private renderingService: RenderingService,
     private animationService: AnimationService,
     private countrySelectionService: CountrySelectionService,
-    private ngZone: NgZone,
-    private changeDetector: ChangeDetectorRef) {
+    private ngZone: NgZone) {
     // no need to clear
     this.countrySelectionService.getSelectedCountry().subscribe(() => {
       this.hideUI = true;
-      this.changeDetector.detectChanges();
     });
 
     this.countrySelectionService.onClearSelection().subscribe(() => {
       this.hideUI = false;
-      this.changeDetector.detectChanges();
     });
   }
 
